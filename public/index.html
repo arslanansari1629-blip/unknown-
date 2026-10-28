@@ -362,6 +362,14 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
 .bundle-btn.on{border-color:var(--blue);color:#fff}
 #codeEd{min-height:300px}
 
+/* ===== Bot Studio: live audit log, simulator, hosted counters ===== */
+.audit-term{background:#030711;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font-family:ui-monospace,Menlo,monospace;font-size:12.3px;line-height:1.7;height:190px;overflow:auto;white-space:pre-wrap;color:#aebfe8}
+.audit-term .al-ok{color:#2fd67a}.audit-term .al-warn{color:#ffc857}.audit-term .al-bad{color:#ff8fa0}.audit-term .al-dim{color:#5f7195}
+.sim-chat{background:#0a1128;border:1px solid var(--line);border-radius:14px;height:250px;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.sim-row{display:flex}.sim-row.me{justify-content:flex-end}
+.sim-bub{max-width:78%;padding:9px 13px;border-radius:14px;background:#14224a;color:#e8efff;font-size:13.5px;line-height:1.55;white-space:pre-wrap;animation:paneIn .25s ease}
+.sim-row.me .sim-bub{background:linear-gradient(90deg,#1c7ed6,#7c5cff);color:#fff}
+
 </style>
 </head>
 <body>
@@ -467,6 +475,12 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
 <section id="bots" class="wrap">
   <h2>🤖 My Bots</h2>
   <p class="sub">Saved in your browser, verified live against the platform API.</p>
+  <div class="stats" id="hostStats" style="margin:16px auto 18px">
+    <div class="stat"><b id="hsTotal">0</b><s>🤖 Bots hosted by you</s></div>
+    <div class="stat"><b id="hsLive">0</b><s>⚡ Webhook bots</s></div>
+    <div class="stat"><b id="hsFw">0</b><s>🧩 Frameworks used</s></div>
+    <div class="stat"><b id="hsLast">—</b><s>🕒 Last deploy</s></div>
+  </div>
   <div class="card" style="overflow-x:auto">
     <table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th>Status</th><th>Webhook</th><th></th></tr></thead>
     <tbody id="botsBody"><tr><td colspan="6" style="color:var(--mut)">No bots yet — deploy your first one above ⚡</td></tr></tbody></table>
@@ -476,6 +490,7 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
 <section id="playground" class="wrap">
   <h2>🧪 Paste Code + Dependency Installer</h2>
   <p class="sub">No templates — paste <b style="color:#fff">your own</b> <span class="kbd">bot.py</span> straight from the clipboard. Imports are auto-detected and turned into a ready <span class="kbd">requirements.txt</span> from 40+ installable Python libraries.</p>
+  <p id="pgHostLine" style="color:var(--mut);font-size:13.5px;margin-top:-8px">🤖 You have hosted <b style="color:#fff">0 bots</b> from this browser — deploy one above and it counts here.</p>
   <div class="console">
     <div class="card">
       <label>bot.py — your code</label>
@@ -487,6 +502,9 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
         <button class="btn small ghost" id="btnClearCode">🧹 Clear</button>
       </div>
       <div id="codeStats" style="font-size:12.5px;color:var(--mut);margin-top:10px">📄 Empty — paste your bot code to begin</div>
+      <label style="margin-top:16px">📜 Live Bot Audit Log</label>
+      <div id="auditLog" class="audit-term"><div class="al-dim">Audit log ready — paste code and watch the live audit stream here…</div></div>
+      <div class="flex mt"><button class="btn small" id="btnServerAudit">🔬 Run Server Audit</button><span id="auditScore" style="font-size:13px;color:var(--mut)">Readiness + security, scored by the server analyzer</span></div>
     </div>
     <div class="card">
       <label>Python libraries — click to install into requirements.txt</label>
@@ -507,6 +525,11 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
       <div class="flex mt"><button class="btn small" id="btnCopyReq">📋 Copy requirements.txt</button></div>
       <p style="color:var(--mut);font-size:13px;line-height:1.7;margin-top:14px">💡 <b style="color:#fff">Webhook mode?</b> You don't even need this file — the built-in serverless brain answers instantly. Use custom code with Polling mode on the included <span class="kbd">server.js</span> / Docker stack, 24/7 with auto-restart.</p>
     </div>
+  </div>
+  <div class="card mt"><b style="color:#fff">🤖 Live Bot Simulator — your bot behaves exactly per your bot.py</b>
+    <p id="simMeta" style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Paste code above — its command handlers, replies and echo behaviour are extracted, then this chat answers like your bot would on Telegram.</p>
+    <div id="simChat" class="sim-chat"><div class="sim-row bot"><div class="sim-bub">👋 I am your simulated bot. Paste bot.py above, then send me /start</div></div></div>
+    <div class="flex mt"><input id="simInput" placeholder="Type a message… e.g. /start" style="flex:1"><button class="btn small" id="simSend">📤 Send</button><button class="btn small ghost" id="simClear">🧹 Clear</button></div>
   </div>
 </section>
 
@@ -962,7 +985,7 @@ $('#deployForm').onsubmit=async e=>{
     step(1); const v=await api('/api/validate_token',{method:'POST',body:JSON.stringify({token})});
     log('✅ Token valid → @'+v.bot.username+' ('+v.bot.first_name+')','lg-ok'); step(2);
     const reg=await api('/api/bots',{method:'POST',body:JSON.stringify({name,token,framework,mode})});
-    log('✅ Registered bot id '+reg.bot.id+' on '+reg.bot.runtime,'lg-ok'); step(3);
+    log('✅ Registered bot id '+reg.bot.id+' on '+reg.bot.runtime,'lg-ok'); try{const _ce=$('#codeEd'); if(_ce&&_ce.value.trim()){const _cm=extractModel(_ce.value); log('📜 bot.py attached: '+_cm.framework+' · '+Object.keys(_cm.commands).length+' command handler(s) · requirements auto-built ('+detectLibs(_ce.value).length+' deps) — custom code runs 24/7 on the Full Panel/Docker, webhook brain answers meanwhile','lg-inf')}}catch(e){} step(3);
     log('📦 Dependencies resolved ('+(framework.includes('Raw')?'stdlib only — zero install ⚡':framework)+')','lg-ok'); step(4);
     let hookUrl=reg.bot.webhook_url;
     if(mode==='webhook'&&setHook){
@@ -1019,12 +1042,12 @@ async function pasteFromClipboard(){ const ed=$('#codeEd');
   try{ if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error('Clipboard API unavailable');
     const text=await navigator.clipboard.readText();
     if(!text||!text.trim()){toast('📋 Clipboard is empty — copy your bot code first');ed.focus();return}
-    ed.value=text; updateCodeStats(); const added=autoInstall(text);
+    ed.value=text; updateCodeStats(); const added=autoInstall(text); runAudit('clipboard paste');
     toast('📋 Pasted '+text.split('\n').length+' lines'+(added.length?' · 📦 auto-installed: '+added.map(f=>f.split('==')[0]).join(', '):''));
   }catch(e){ ed.focus(); toast('⚠ Browser blocked clipboard read — press Ctrl+V (auto-install still works)'); } }
 $('#btnPasteCode').onclick=pasteFromClipboard;
-$('#codeEd').addEventListener('input',updateCodeStats);
-$('#codeEd').addEventListener('paste',()=>setTimeout(()=>{const added=autoInstall($('#codeEd').value); updateCodeStats(); if(added.length)toast('📦 Auto-installed: '+added.map(f=>f.split('==')[0]).join(', '))},60));
+$('#codeEd').addEventListener('input',()=>{updateCodeStats(); clearTimeout(auditTimer); auditTimer=setTimeout(()=>runAudit('live typing'),650)});
+$('#codeEd').addEventListener('paste',()=>setTimeout(()=>{const added=autoInstall($('#codeEd').value); updateCodeStats(); runAudit('paste'); if(added.length)toast('📦 Auto-installed: '+added.map(f=>f.split('==')[0]).join(', '))},60));
 $('#btnClearCode').onclick=()=>{if(!$('#codeEd').value||confirm('Clear the editor?')){$('#codeEd').value='';updateCodeStats();$('#codeEd').focus()}};
 $('#libSearch').addEventListener('input',renderLibs);
 const BUNDLES={telegram:['python-telegram-bot==21.6','httpx==0.28.1','python-dotenv==1.0.1'],ai:['openai==1.59.3','google-generativeai==0.8.3','anthropic==0.40.0','python-dotenv==1.0.1'],db:['SQLAlchemy==2.0.36','redis==5.2.1','pymongo==4.10.1','aiosqlite==0.20.0'],web:['fastapi==0.115.6','uvicorn==0.34.0','requests==2.32.3','beautifulsoup4==4.12.3']};
@@ -1038,6 +1061,105 @@ $('#btnCopyCode').onclick=()=>{navigator.clipboard.writeText($('#codeEd').value)
 $('#btnCopyReq').onclick=()=>{navigator.clipboard.writeText($('#reqEd').value);toast('📋 requirements.txt copied')};
 $('#btnDownload').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#codeEd').value],{type:'text/x-python'}));a.download='bot.py';a.click();toast('⬇️ bot.py downloaded')};
 renderLibs(); syncReq(); updateCodeStats();
+
+/* ============ Bot Studio: live audit log, behaviour simulator, hosted counters ============ */
+let auditTimer=null, botModel=null;
+function alog(msg,cls){ const el=$('#auditLog'); if(!el)return; const d=document.createElement('div'); if(cls)d.className=cls; d.textContent='['+new Date().toLocaleTimeString()+'] '+msg; el.appendChild(d); while(el.children.length>70)el.firstChild.remove(); el.scrollTop=el.scrollHeight; }
+function detectFramework(code){
+  if(/aiogram/.test(code))return 'aiogram 3';
+  if(/[Tt]elethon/.test(code))return 'Telethon';
+  if(/pyrogram/i.test(code))return 'Pyrogram';
+  if(/telebot|PyTelegramBotAPI/.test(code))return 'PyTelegramBotAPI';
+  if(/from telegram|telegram\.ext/.test(code))return 'python-telegram-bot';
+  if(/api\.telegram\.org/.test(code))return 'Raw Bot API';
+  return 'Custom / unknown';
+}
+function extractModel(code){
+  const model={framework:detectFramework(code),commands:{},echo:false,textReply:null,handlers:0,
+    polling:/run_polling|start_polling|\.polling\(|executor\.start_polling/.test(code),
+    webhook:/set_webhook|setWebhook/.test(code)};
+  const defs={}; let m;
+  const dre=/(?:async\s+def|def)\s+([A-Za-z_]\w*)\s*\([^)]*\)\s*:\s*\n([\s\S]*?)(?=\n(?:async\s+def|def|@|app\.|bot\.|dp\.|if __name__|$))/g;
+  while((m=dre.exec(code))){ const body=m[2];
+    const rm=body.match(/(?:reply_text|reply|send_message|answer)\(\s*(?:[^,()]*,\s*)?(?:f)?['"]([^'"]{1,280})['"]/);
+    defs[m[1]]={reply:rm?rm[1]:null, echoes:!rm&&/reply[^(]*\([^)]*\.text/.test(body)};
+  }
+  const chre=/CommandHandler\(\s*['"](\w+)['"]\s*,\s*([A-Za-z_]\w*)/g;
+  while((m=chre.exec(code)))model.commands[m[1].toLowerCase()]=defs[m[2]]||{};
+  const aire=/@[\w.]*\.message\(Command(?:Start)?\(?\s*(?:['"](\w+)['"])?[^)]*\)\)\s*\n(?:async\s+def|def)\s+([A-Za-z_]\w*)/g;
+  while((m=aire.exec(code)))model.commands[(m[1]||'start').toLowerCase()]=defs[m[2]]||{};
+  const tbre=/message_handler\(commands=\[([^\]]+)\][^)]*\)\s*\n(?:async\s+def|def)\s+([A-Za-z_]\w*)/g;
+  while((m=tbre.exec(code)))m[1].split(',').forEach(q=>{const c=q.trim().replace(/['"]/g,'').toLowerCase(); if(c)model.commands[c]=defs[m[2]]||{}});
+  let th=null;
+  const mh=code.match(/MessageHandler\(\s*filters\.TEXT[^,]*,\s*([A-Za-z_]\w*)/); if(mh)th=defs[mh[1]];
+  const dt=code.match(/message_handler\(content_types=\[[^\]]*text[^\]]*\]\s*\)\s*\n(?:async\s+def|def)\s+([A-Za-z_]\w*)/); if(dt)th=defs[dt[1]];
+  if(th){ if(th.echoes)model.echo=true; else if(th.reply)model.textReply=th.reply; }
+  model.handlers=Object.keys(model.commands).length+((model.echo||model.textReply)?1:0);
+  return model;
+}
+function runAudit(src){
+  const code=$('#codeEd').value, meta=$('#simMeta');
+  if(!code.trim()){ alog('⚠ Editor is empty — paste your bot.py to start the live audit','al-warn'); botModel=null; return; }
+  botModel=extractModel(code);
+  const deps=detectLibs(code), lines=code.split('\n').length, cmds=Object.keys(botModel.commands);
+  alog('🔍 Live audit ('+src+') — '+lines+' lines · '+code.length+' chars','al-ok');
+  alog('🐍 Framework detected: '+botModel.framework+' · '+botModel.handlers+' handler(s)'+(cmds.length?' · commands: '+cmds.map(c=>'/'+c).join(' '):''));
+  alog('📦 requirements.txt auto-filled: '+(deps.length?deps.join(' · '):'stdlib only — nothing to install'));
+  alog(botModel.polling?'🔁 Run mode: POLLING — runs 24/7 on the Full Panel / Docker process host':(botModel.webhook?'⚡ Run mode: WEBHOOK — serverless-ready':'ℹ Run mode: not explicit — add run_polling() or a webhook to go live'),'al-dim');
+  if(/\d{6,}:[A-Za-z0-9_-]{30,}/.test(code))alog('❌ SECURITY: hardcoded bot token in code! Move it to .env as BOT_TOKEN','al-bad');
+  else if(/BOT_TOKEN|os\.environ|getenv/.test(code))alog('🔐 Token handled via environment — good practice','al-ok');
+  else alog('⚠ No BOT_TOKEN reference found — the bot cannot authenticate with Telegram','al-warn');
+  if(!cmds.length&&!botModel.echo)alog('⚠ No command handlers found — add e.g. CommandHandler("start", start)','al-warn');
+  alog('🤖 Simulator updated — chat below now behaves per this code','al-ok');
+  if(meta)meta.textContent='🤖 Simulating: '+botModel.framework+' · '+(cmds.length?('answers '+cmds.map(c=>'/'+c).join(' ')):'no commands')+(botModel.echo?' · echoes any text':'')+(botModel.textReply?' · replies to text':'')+' — try it:';
+}
+$('#btnServerAudit').onclick=async()=>{
+  const code=$('#codeEd').value.trim();
+  if(!code){toast('Paste your bot.py code first');$('#codeEd').focus();return}
+  alog('⏳ Sending bot.py to the server analyzer (static only — code is never executed)…');
+  try{
+    const d=await api('/api/analyze',{method:'POST',body:JSON.stringify({files:[{path:'bot.py',content:code}],start_command:$('#startCmd').value.trim()})});
+    const r=d.report||{};
+    alog('✅ Server audit: '+(r.language||'?')+' · '+(r.framework||'no framework')+' · entry: '+(r.entry||'bot.py'),'al-ok');
+    alog('📊 Readiness '+(r.readiness??'?')+'/100 · Security '+(r.security_score??'?')+'/100 · mode: '+(r.mode||'?')+' · deps: '+((r.dependencies||[]).join(', ')||'none'));
+    (r.warnings||[]).slice(0,4).forEach(w=>alog('⚠ '+w,'al-warn'));
+    (r.security||[]).slice(0,4).forEach(f=>alog((f.level==='high'?'❌ ':'⚠ ')+f.msg,f.level==='high'?'al-bad':'al-warn'));
+    if(r.compatibility)alog(r.compatibility.vercel_webhook?'⚡ Vercel webhook: READY':'🏠 Hosting: '+(r.compatibility.vercel_reason||'Full Panel / Docker'),'al-dim');
+    alog('▶ Install: '+((r.commands||{}).install||'—')+' · Start: '+((r.commands||{}).start||'python bot.py'),'al-dim');
+    const sc=$('#auditScore'); if(sc)sc.innerHTML='Readiness <b style="color:#2fd67a">'+(r.readiness??'?')+'/100</b> · Security <b style="color:#2aabee">'+(r.security_score??'?')+'/100</b>';
+    toast('🔬 Server audit complete — readiness '+(r.readiness??'?')+'/100');
+  }catch(e){ alog('❌ Server audit failed: '+e.message,'al-bad'); }
+};
+/* simulator */
+function simSay(who,text){ const c=$('#simChat'); if(!c)return; const row=document.createElement('div'); row.className='sim-row '+(who==='me'?'me':'bot'); const b=document.createElement('div'); b.className='sim-bub'; b.textContent=text; row.appendChild(b); c.appendChild(row); c.scrollTop=c.scrollHeight; }
+function simReply(text){
+  const m2=botModel, t=(text||'').trim();
+  if(!m2)return '🤖 Paste your bot.py above first — then I will behave exactly like it.';
+  if(t.startsWith('/')){ const cmd=t.slice(1).split(/\s+/)[0].toLowerCase(), h=m2.commands[cmd];
+    if(h){ if(h.echoes)return t; return h.reply||('✅ /'+cmd+' is handled by your code (it replies with something dynamic, not a fixed text)'); }
+    return '🚫 Your code has no handler for /'+cmd+' — on Telegram the bot would stay silent.'; }
+  if(m2.echo)return text;
+  if(m2.textReply)return m2.textReply;
+  const cmds=Object.keys(m2.commands);
+  return '🤐 Your code only answers commands'+(cmds.length?' ('+cmds.map(c=>'/'+c).join(' ')+')':'')+' — plain text gets no reply.';
+}
+function simSendNow(){ const inp=$('#simInput'), v=inp.value.trim(); if(!v)return; inp.value=''; simSay('me',v); setTimeout(()=>simSay('bot',simReply(v)),320); }
+$('#simSend').onclick=simSendNow;
+$('#simInput').addEventListener('keydown',e=>{if(e.key==='Enter')simSendNow()});
+$('#simClear').onclick=()=>{$('#simChat').innerHTML=''; simSay('bot','👋 Chat cleared. Send /start to test your bot.')};
+/* hosted counters */
+function updateHostStats(){
+  const total=myBots.length, live=myBots.filter(b=>b.mode==='webhook').length;
+  const fws=new Set(myBots.map(b=>b.framework).filter(Boolean)).size;
+  const last=myBots[0]&&myBots[0].at?new Date(myBots[0].at).toLocaleDateString():'—';
+  const set=(id,v)=>{const e=$(id); if(e)e.textContent=v};
+  set('#hsTotal',total); set('#hsLive',live); set('#hsFw',fws); set('#hsLast',last);
+  const pg=$('#pgHostLine'); if(pg)pg.innerHTML='🤖 You have hosted <b style="color:#fff">'+total+' bot'+(total===1?'':'s')+'</b> from this browser'+(live?' · '+live+' on webhooks':'')+' — deploy one above and watch this count grow.';
+}
+const _renderBotsOrig=renderBots;
+renderBots=function(){ _renderBotsOrig(); updateHostStats(); };
+updateHostStats();
+
 
 /* ================= restricted console v3 (hidden entry, server-side auth) ================= */
 const XKEY='x_console_cfg_v1';

@@ -16,7 +16,7 @@ class handler(BaseHTTPRequestHandler):
             "time": datetime.now(timezone.utc).isoformat(),
             "endpoints": ["/api/health", "/api/stats", "/api/templates",
                           "/api/validate_token", "/api/bots", "/api/set_webhook",
-                          "/api/webhook"],
+                          "/api/webhook", "/api/analyze"],
         })
 
     def do_OPTIONS(self):
