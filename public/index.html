@@ -268,6 +268,31 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
 #xPanel[data-theme="light"] #xcPanelBots .tag,#xPanel[data-theme="light"] .chip{background:#dbe7ff;color:#2c4a8a}
 @media(max-width:960px){#xPanel.rail .xp-shell{grid-template-columns:1fr}#xPanel.rail .xp-nav{font-size:13.5px;text-align:left;padding:11px 13px}#xPanel.rail .xp-nav::before{content:none}#xPanel.rail .xp-group,#xPanel.rail .xp-user{display:flex}#xPanel.rail .xp-brand span{display:inline}#xPanel.rail .xp-side-foot .btn{font-size:13px}}
 
+/* ===== Console v9 Nexus: Live Monitor, notifications, insights ===== */
+#xPanel .xp-topbar{position:relative}
+.bell-wrap{position:relative;display:inline-flex}
+#xBellBdg{position:absolute;top:-6px;right:-6px;background:#ff5d73;color:#fff;font-size:10px;font-weight:800;border-radius:99px;padding:1px 6px;box-shadow:0 4px 10px #ff5d7355;animation:bellPulse 1.6s ease-in-out infinite}
+@keyframes bellPulse{50%{transform:scale(1.18)}}
+#xBellPanel{position:absolute;top:calc(100% + 8px);right:10px;width:350px;max-width:92vw;background:linear-gradient(180deg,#0e1838,#0a1128);border:1px solid #2a3f7d;border-radius:16px;padding:15px;z-index:360;box-shadow:0 30px 60px -18px #000c;text-align:left}
+#xBellList{max-height:300px;overflow:auto}
+.score-ring{width:118px;height:118px;border-radius:50%;margin:8px auto;display:flex;align-items:center;justify-content:center;flex:none}
+.score-in{width:92px;height:92px;border-radius:50%;background:#0b1226;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-in b{font-size:27px;color:#fff;line-height:1}.score-in s{font-size:10.5px;color:var(--mut);text-decoration:none;letter-spacing:1px}
+.sec-row{display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-bottom:1px solid #141f3d;font-size:13px;color:var(--mut)}
+.sec-row b{color:#e8efff;font-weight:600}
+.lat-row{margin-bottom:11px}.lat-row .flex{justify-content:space-between;font-size:12.5px;color:var(--mut)}
+.feed-item{display:flex;gap:9px;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid #141f3d;font-size:13px;color:var(--mut);animation:paneIn .3s ease}
+.feed-item b{color:#fff}.feed-item time{color:#5f7195;font-size:12px}
+.insight{display:flex;gap:11px;padding:9px 0;border-bottom:1px solid #141f3d;font-size:13.5px;color:var(--mut);line-height:1.55}
+.insight:last-child{border-bottom:0}.insight b{color:#fff}
+.insight .ic{font-size:17px;flex:none}
+#xmLiveDot{width:9px;height:9px;border-radius:50%;background:var(--grn,#2fd67a);display:inline-block;animation:bellPulse 1.4s infinite}
+#xPanel.rail .xp-nav[data-xtab="monitor"]::before{content:'🖥️'}
+#xPanel[data-theme="light"] #xBellPanel{background:#ffffff;border-color:#c7d5f2;box-shadow:0 24px 50px -18px #7a90c488}
+#xPanel[data-theme="light"] .score-in{background:#eef3ff}
+#xPanel[data-theme="light"] .sec-row,#xPanel[data-theme="light"] .feed-item,#xPanel[data-theme="light"] .insight{border-bottom-color:#dbe5fa}
+#xPanel[data-theme="light"] .sec-row b,#xPanel[data-theme="light"] .feed-item b,#xPanel[data-theme="light"] .insight b{color:#17233f}
+
 </style>
 </head>
 <body>
@@ -456,7 +481,7 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v8 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v9 Nexus · keys 1-9 switch tabs · ? = shortcuts</small></div>
       <div class="xp-group">Overview</div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <div class="xp-group">Hosting</div>
@@ -467,6 +492,8 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
       <button class="xp-nav" data-xtab="telegram">✈️ Telegram Lab</button>
       <div class="xp-group">Insights</div>
       <button class="xp-nav" data-xtab="analytics">📈 Analytics</button>
+      <div class="xp-group">Operations</div>
+      <button class="xp-nav" data-xtab="monitor">🖥️ Live Monitor</button>
       <div class="xp-group">Platform</div>
       <button class="xp-nav" data-xtab="site">🎛️ Site Builder</button>
       <button class="xp-nav" data-xtab="system">⚙️ System</button>
@@ -484,11 +511,13 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
         <span class="tag live" id="xLiveTag">● LIVE SYNC</span>
         <span style="color:var(--mut);font-size:12px" id="xUpdated"></span>
         <span class="xclock" id="xClock"></span>
+        <span class="bell-wrap"><button class="btn small ghost" id="xBell" title="Notifications">🔔</button><span id="xBellBdg" class="hide">0</span></span>
         <button class="btn small ghost" id="xThemeBtn" title="Toggle light / dark theme">🌙</button>
         <button class="btn small ghost" id="xRailBtn" title="Collapse / expand sidebar">↔️</button>
         <select id="xAccent" class="xmini" title="Console accent theme"><option value="blue">🎨 Blue</option><option value="violet">🎨 Violet</option><option value="green">🎨 Mint</option><option value="orange">🎨 Sunset</option></select>
         <button class="btn small ghost" id="xDensity" title="Toggle compact density">🗜️</button>
         <button class="btn small ghost" id="xShortcutsBtn" title="Keyboard shortcuts">?</button>
+        <div id="xBellPanel" class="hide"><div class="flex" style="justify-content:space-between;align-items:center"><b style="color:#fff">🔔 Notifications</b><button class="btn small ghost" id="xBellRead">Mark all read</button></div><div id="xBellList" class="mt">No notifications yet.</div></div>
       </div>
 
       <div data-xpane="overview">
@@ -510,6 +539,7 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
           </div><pre class="json mt" id="xHealthOut">Health checks appear here…</pre></div>
           <div class="card"><b style="color:#fff">🖥 Platform</b><pre class="json mt" id="xPlatform">…</pre></div>
         </div>
+        <div class="card mt"><b style="color:#fff">🧠 Smart Insights</b><div id="xInsights" class="mt">Crunching your platform data…</div></div>
         <div class="card mt"><b style="color:#fff">🧾 Live Activity / Audit</b><div id="xAudit" class="mt audit-feed">—</div></div>
       </div>
 
@@ -673,6 +703,21 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
         </div>
       </div>
 
+      <div data-xpane="monitor" class="hide">
+        <div class="xp-grid" id="xmStats"></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">📡 Endpoint Latency</b>
+            <div class="flex mt" style="align-items:center"><span id="xmLiveDot"></span><button class="btn small" id="xmRun">📡 Run Probe</button><label class="chk"><input type="checkbox" id="xmAuto"> Auto-probe 10s</label><span id="xmCount" style="font-size:12.5px;color:var(--mut)"></span></div>
+            <div id="xmEndpoints" class="mt" style="font-size:13px;color:var(--mut)">Press Run Probe — every public API is timed live.</div>
+            <pre class="json mt" id="xmProbeOut">Probe results appear here…</pre></div>
+          <div class="card"><b style="color:#fff">🔐 Security Posture</b>
+            <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><div class="score-ring" id="xmSecRing"><div class="score-in"><b id="xmSecScore">–</b><s>SECURITY</s></div></div>
+            <div style="flex:1;min-width:170px"><p style="color:var(--mut);font-size:13px;line-height:1.6">Live audit of credentials, session, exposure &amp; hygiene.</p><button class="btn small mt" id="xmSecBtn">🔐 Run Security Audit</button></div></div>
+            <div id="xmSecList" class="mt">Not run yet.</div></div>
+        </div>
+        <div class="card mt"><b style="color:#fff">📜 Live Event Stream</b><div id="xmFeed" class="mt audit-feed" data-empty="1">Waiting for events…</div></div>
+      </div>
+
       <div data-xpane="site" class="hide">
         <div class="xp-2col">
           <div class="card"><b style="color:#fff">🎛️ Live Site Control</b>
@@ -736,8 +781,8 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
 <div id="xShortcuts" class="modal hide"><div class="box" style="width:520px">
   <h3>⌨️ Keyboard Shortcuts</h3>
   <div style="line-height:2;font-size:14px;color:var(--mut)">
-  <span class="kbd">1</span>–<span class="kbd">8</span> switch tabs · <span class="kbd">Ctrl/⌘ K</span> command palette · <span class="kbd">Ctrl/⌘ S</span> save site (Site tab) · <span class="kbd">?</span> this help · <span class="kbd">Esc</span> close dialogs<br>
-  Tabs: 1 Overview · 2 Bot Manager · 3 Bot Hosting · 4 Code Hosting · 5 Telegram Lab · 6 Analytics · 7 Site Builder · 8 System
+  <span class="kbd">1</span>–<span class="kbd">9</span> switch tabs · <span class="kbd">Ctrl/⌘ K</span> command palette · <span class="kbd">Ctrl/⌘ S</span> save site (Site tab) · <span class="kbd">?</span> this help · <span class="kbd">Esc</span> close dialogs<br>
+  Tabs: 1 Overview · 2 Bot Manager · 3 Bot Hosting · 4 Code Hosting · 5 Telegram Lab · 6 Analytics · 7 Live Monitor · 8 Site Builder · 9 System
   </div>
   <button type="button" class="btn ghost mt" style="width:100%;justify-content:center" onclick="document.getElementById('xShortcuts').classList.add('hide')">Close</button>
 </div></div>
@@ -918,7 +963,7 @@ addEventListener('hashchange',()=>{if(location.hash==='#/console-900s')openGate(
 addEventListener('keydown',e=>{
   if(e.ctrlKey&&e.shiftKey&&(e.key==='A'||e.key==='a')){e.preventDefault();openGate()}
   if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')&&sessionStorage.getItem('x_console_token')){e.preventDefault();openPalette()}
-  if(e.key==='Escape'){$('#xPalette').classList.add('hide');const sc=$('#xShortcuts');if(sc)sc.classList.add('hide')}
+  if(e.key==='Escape'){$('#xPalette').classList.add('hide');const sc=$('#xShortcuts');if(sc)sc.classList.add('hide');const bp=$('#xBellPanel');if(bp)bp.classList.add('hide')}
 });
 let brandClicks=[]; $('#brandMark').addEventListener('click',()=>{const n=Date.now();brandClicks=brandClicks.filter(t=>n-t<2500);brandClicks.push(n);if(brandClicks.length>=5){brandClicks=[];openGate()}});
 $('#xGateClose').onclick=()=>$('#xGate').classList.add('hide');
@@ -960,7 +1005,7 @@ function xLogout(silent){
 $('#xLogout').onclick=()=>xLogout(false);
 $('#xRefresh').onclick=()=>refreshAll();
 let xhLastCheck=0;
-function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name)); const CRUMB={overview:'📊 Overview',bots:'🤖 Bot Manager',hosting:'🚀 Bot Hosting',code:'🗂️ Code Hosting',telegram:'✈️ Telegram Lab',analytics:'📈 Analytics',site:'🎛️ Site Builder',system:'⚙️ System'}; const cr=$('#xCrumb'); if(cr)cr.innerHTML='⌂ › <b>'+(CRUMB[name]||name)+'</b>'; const pn=document.querySelector('[data-xpane="'+name+'"]'); if(pn){pn.classList.remove('pane-in'); void pn.offsetWidth; pn.classList.add('pane-in')}$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
+function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name)); const CRUMB={overview:'📊 Overview',bots:'🤖 Bot Manager',hosting:'🚀 Bot Hosting',code:'🗂️ Code Hosting',telegram:'✈️ Telegram Lab',analytics:'📈 Analytics',site:'🎛️ Site Builder',system:'⚙️ System',monitor:'🖥️ Live Monitor'}; const cr=$('#xCrumb'); if(cr)cr.innerHTML='⌂ › <b>'+(CRUMB[name]||name)+'</b>'; const pn=document.querySelector('[data-xpane="'+name+'"]'); if(pn){pn.classList.remove('pane-in'); void pn.offsetWidth; pn.classList.add('pane-in')}$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='monitor')xmEnterMonitor(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
 $$('.xp-nav').forEach(t=>t.onclick=()=>gotoTab(t.dataset.xtab));
 
 /* ---------- charts (zero-dependency canvas) ---------- */
@@ -999,7 +1044,7 @@ async function refreshAll(silent){
     $('#xAudit').innerHTML=(ov.audit&&ov.audit.length)?ov.audit.map(a=>'<div class="audit-item"><span>'+new Date(a.at*1000).toLocaleTimeString()+'</span><b>'+esc(a.actor)+'</b> '+esc(a.action)+' <em>'+esc(a.detail||'')+'</em></div>').join(''):'No actions recorded yet.';
     if(!siteDirty||!xFlagsLoaded){fillFlags(ov.flags||{});xFlagsLoaded=true}
     drawLine($('#chTraffic'),xAnalytics?xAnalytics.days:[]); drawDonut($('#chFw'),xAnalytics?xAnalytics.frameworks:[]);
-    renderXBots(xServerCache); $('#xUpdated').textContent='updated '+new Date().toLocaleTimeString(); window._xAudit=ov.audit||[];
+    renderXBots(xServerCache); $('#xUpdated').textContent='updated '+new Date().toLocaleTimeString(); window._xAudit=ov.audit||[]; try{renderBell(ov.audit||[]);renderInsights();xmFeedAudit(ov.audit||[])}catch(e){}
     if(!silent)toast('↻ Console data refreshed');
   }catch(e){if(!silent)toast('❌ '+e.message)}
 }
@@ -1063,7 +1108,7 @@ $('#xtRun').onclick=async()=>{
 async function runHealth(target){
   const out=$(target||'#xHealthOut'); out.textContent='⏳ Probing endpoints…';
   try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'health_check'})});
-    out.textContent=d.checks.map(c=>(c.ok?'✅':'❌')+' '+c.endpoint+' — '+c.status+' ('+c.ms+'ms)').join('\n'); refreshAll(true);
+    out.textContent=d.checks.map(c=>(c.ok?'✅':'❌')+' '+c.endpoint+' — '+c.status+' ('+c.ms+'ms)').join('\n'); const _lt=$('#xLiveTag'); if(_lt)_lt.textContent=d.checks.every(c=>c.ok)?'● LIVE SYNC':'⚠ DEGRADED'; feedEvent(d.checks.every(c=>c.ok)?'🩺 Health check: all endpoints OK':'⚠ Health check: a problem was found'); refreshAll(true);
   }catch(e){out.textContent='❌ '+e.message}
 }
 $$('[data-q]').forEach(b=>b.onclick=async()=>{
@@ -1197,7 +1242,7 @@ async function runDiagnostics(){
   try{const pc=await api('/api/admin?action=public_config'); push('Public site config',!!pc.ok,'maintenance='+(pc.flags&&pc.flags.maintenance))}catch(e){push('Public site config',false,e.message)}
   push('Browser storage',true,'hosted bots: '+hostedBots.length+' · saved bots: '+myBots.length+' · config keys: '+Object.keys(xCfg).length);
   const exp=+sessionStorage.getItem('x_console_exp')||0; push('Session',exp>Date.now()/1000,fmtExp()||'no session');
-  push('Console version',true,'v4 · '+navigator.userAgent.slice(0,60)+'…');
+  push('Console version',true,'v9 Nexus · '+navigator.userAgent.slice(0,60)+'…');
   const bad=rows.filter(r=>!r.ok);
   xDiagReport=rows.map(r=>(r.ok?'✅':'❌')+' '+r.name+': '+r.detail).join('\n');
   out.innerHTML=rows.map(r=>'<span class="'+(r.ok?'diag-ok':'diag-bad')+'">'+(r.ok?'✅':'❌')+'</span> '+esc(r.name)+' — '+esc(String(r.detail))).join('\n')
@@ -1210,8 +1255,8 @@ $('#xsDiagCopy').onclick=()=>{if(!xDiagReport){toast('Run diagnostics first');re
 addEventListener('keydown',e=>{
   if($('#xPanel').classList.contains('hide'))return;
   const a=document.activeElement; if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))return;
-  const tabs=['overview','bots','hosting','code','telegram','analytics','site','system'];
-  if(/^[1-8]$/.test(e.key))gotoTab(tabs[+e.key-1]);
+  const tabs=['overview','bots','hosting','code','telegram','analytics','monitor','site','system'];
+  if(/^[1-9]$/.test(e.key))gotoTab(tabs[+e.key-1]);
 });
 const xWhoEl=$('#xWho'); if(xWhoEl&&!xWhoEl.dataset.v){xWhoEl.dataset.v=1}
 
@@ -1552,7 +1597,7 @@ const PALETTE=[
  ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🗂️ Code Hosting',()=>gotoTab('code')],['⬇️ Deployment ZIP',()=>gotoTab('code')],['🐙 Import from GitHub',()=>{gotoTab('code');setTimeout(()=>{const g=$('#xcGhUrl');if(g)g.focus()},80)}],['🖥️ Load Panel Bots',()=>{gotoTab('code');setTimeout(()=>{if(window.xcPanelLoad)xcPanelLoad()},80)}],['⌨️ Keyboard Shortcuts',()=>$('#xShortcuts').classList.remove('hide')],['🎨 Cycle Accent Theme',()=>{const s2=$('#xAccent');if(!s2)return;const v=['blue','violet','green','orange'];s2.value=v[(v.indexOf(s2.value)+1)%4];s2.dispatchEvent(new Event('change'))}],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
  ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
  ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['🔬 Run Full Diagnostics',()=>{gotoTab('system');runDiagnostics()}],['🚀 Bot Hosting',()=>gotoTab('hosting')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
- ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],
+ ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🖥️ Live Monitor',()=>gotoTab('monitor')],['📡 Performance Probe',()=>{gotoTab('monitor');runPerfProbe()}],['🔐 Security Audit',()=>{gotoTab('monitor');runSecurityAudit()}],['🔔 Notifications',()=>{const b=$('#xBell');if(b)b.click()}],['🔒 Logout',()=>xLogout(false)],
 ];
 function openPalette(){$('#xPalette').classList.remove('hide');renderPalette('');setTimeout(()=>$('#xPalInput').focus(),40)}
 function renderPalette(q){$('#xPalList').innerHTML=PALETTE.filter(p=>p[0].toLowerCase().includes(q.toLowerCase())).map((p,i)=>'<button class="pal-item" data-pal="'+PALETTE.indexOf(p)+'">'+p[0]+'</button>').join('')||'<p style="color:var(--mut);padding:10px">No commands found.</p>';
@@ -1560,6 +1605,93 @@ function renderPalette(q){$('#xPalList').innerHTML=PALETTE.filter(p=>p[0].toLowe
 $('#xPaletteBtn').onclick=openPalette; $('#xPalClose').onclick=()=>$('#xPalette').classList.add('hide');
 $('#xPalInput').addEventListener('input',e=>renderPalette(e.target.value));
 $('#xPalette').addEventListener('click',e=>{if(e.target.id==='xPalette')$('#xPalette').classList.add('hide')});
+
+/* ================= Console v9 Nexus: monitor, security, notifications, insights ================= */
+let xmLastProbe=0, xmLastSec=0, xmCountdown=10, xmFedAt=0;
+function feedEvent(html){
+  const f=$('#xmFeed'); if(!f)return;
+  if(f.dataset.empty){f.innerHTML='';delete f.dataset.empty}
+  const d=document.createElement('div'); d.className='feed-item';
+  d.innerHTML='<time>'+new Date().toLocaleTimeString()+'</time><span>'+html+'</span>';
+  f.prepend(d); while(f.children.length>30)f.lastChild.remove();
+}
+function xmFeedAudit(audit){
+  (audit||[]).filter(a=>a.at>xmFedAt).slice().reverse().forEach(a=>feedEvent('<b>'+esc(a.actor)+'</b> '+esc(a.action)+(a.detail?' <em>'+esc(a.detail)+'</em>':'')));
+  if(audit&&audit.length)xmFedAt=Math.max(xmFedAt,...audit.map(a=>a.at||0));
+}
+function xmStat(label,val,sub){return '<div class="stat"><b>'+val+'</b><s>'+label+(sub?' · '+sub:'')+'</s></div>'}
+async function runPerfProbe(){
+  const out=$('#xmProbeOut'); if(out)out.textContent='⏳ Probing endpoints + Telegram…';
+  try{
+    const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'perf_probe'})});
+    xmLastProbe=Date.now();
+    const days=(xAnalytics&&xAnalytics.days)||[]; const last=days[days.length-1]||{};
+    const st=$('#xmStats'); if(st)st.innerHTML=xmStat('📡 APIs healthy',d.healthy+'/'+d.total)+xmStat('⚡ Avg latency',d.avg_ms+'ms',d.rating)+xmStat('✈️ Telegram',(d.telegram_reachable?'reachable':'DOWN'),d.telegram_ms+'ms')+xmStat('💬 Messages today',(last.messages||0).toLocaleString())+xmStat('🚀 Deploys today',last.deploys??'—')+xmStat('❌ Errors today',last.errors??'—');
+    const mx=Math.max(1,...d.endpoints.map(e=>e.ms));
+    const ep=$('#xmEndpoints'); if(ep)ep.innerHTML=d.endpoints.map(e=>'<div class="lat-row"><div class="flex"><span>'+(e.ok?'✅':'❌')+' '+esc(e.endpoint)+'</span><span>'+e.ms+'ms · '+esc(String(e.status))+'</span></div><div class="bar"><i style="width:'+Math.max(3,Math.round(100*e.ms/mx))+'%;'+(e.ok?'':'background:#ff5d73')+'"></i></div></div>').join('')+'<p style="font-size:12.5px">Slowest: <b style="color:#fff">'+esc((d.slowest||{}).endpoint||'—')+'</b> · Rating: <b style="color:#fff">'+esc(d.rating)+'</b></p>';
+    if(out)out.textContent='avg '+d.avg_ms+'ms · telegram '+d.telegram_ms+'ms ('+(d.telegram_reachable?'reachable':'unreachable')+') · rating '+d.rating;
+    const lt=$('#xLiveTag'); if(lt)lt.textContent=d.healthy===d.total?'● LIVE SYNC':'⚠ DEGRADED';
+    feedEvent('📡 Probe: '+d.healthy+'/'+d.total+' APIs healthy · avg '+d.avg_ms+'ms · '+d.rating);
+    return d;
+  }catch(e){ if(out)out.textContent='❌ '+e.message; feedEvent('❌ Probe failed: '+esc(e.message)); }
+}
+async function runSecurityAudit(){
+  const list=$('#xmSecList'); if(list)list.textContent='⏳ Auditing…';
+  try{
+    const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'security_audit'})});
+    xmLastSec=Date.now();
+    const sc=$('#xmSecScore'); if(sc)sc.textContent=d.score;
+    const ring=$('#xmSecRing'); if(ring){const col=d.score>=90?'#2fd67a':d.score>=75?'#2aabee':d.score>=55?'#ffc857':'#ff5d73'; ring.style.background='conic-gradient('+col+' '+d.score+'%, #1b2a55 0)';}
+    if(list)list.innerHTML=d.checks.map(c=>'<div class="sec-row"><span>'+(c.ok?'✅':'⚠️')+'</span><span><b>'+esc(c.name)+'</b> — '+esc(c.detail)+'</span></div>').join('')+'<p style="font-size:12.5px;margin-top:8px">Grade <b style="color:#fff">'+esc(d.grade)+'</b>'+(d.warnings.length?' · ⚠ '+d.warnings.map(esc).join(', '):' · no warnings')+'</p>';
+    feedEvent('🔐 Security audit: score '+d.score+' (grade '+d.grade+')'+(d.warnings.length?' · ⚠ '+d.warnings.length+' warning(s)':''));
+    return d;
+  }catch(e){ if(list)list.textContent='❌ '+e.message; }
+}
+function xmEnterMonitor(){
+  if(Date.now()-xmLastProbe>30000)runPerfProbe();
+  if(Date.now()-xmLastSec>60000)runSecurityAudit();
+}
+const xmRunBtn=$('#xmRun'); if(xmRunBtn)xmRunBtn.onclick=()=>runPerfProbe();
+const xmSecBtn=$('#xmSecBtn'); if(xmSecBtn)xmSecBtn.onclick=()=>runSecurityAudit();
+setInterval(()=>{
+  const auto=$('#xmAuto'); if(!auto||!auto.checked)return;
+  const pane=document.querySelector('[data-xpane="monitor"]');
+  if(!pane||pane.classList.contains('hide')||$('#xPanel').classList.contains('hide'))return;
+  xmCountdown--; const c=$('#xmCount'); if(c)c.textContent='next probe in '+xmCountdown+'s';
+  if(xmCountdown<=0){xmCountdown=10;runPerfProbe()}
+},1000);
+/* notifications bell */
+let xBellSeen=+localStorage.getItem('x_bell_seen')||0;
+function renderBell(audit){
+  audit=audit||[];
+  const unread=audit.filter(a=>(a.at||0)>xBellSeen).length;
+  const bdg=$('#xBellBdg'); if(bdg){bdg.textContent=unread; bdg.classList.toggle('hide',!unread)}
+  const list=$('#xBellList'); if(list)list.innerHTML=audit.length?audit.slice(0,12).map(a=>'<div class="feed-item"><time>'+new Date((a.at||0)*1000).toLocaleTimeString()+'</time><span><b>'+esc(a.actor)+'</b> '+esc(a.action)+(a.detail?' <em>'+esc(a.detail)+'</em>':'')+'</span></div>').join(''):'No notifications yet.';
+}
+const xBellBtn=$('#xBell'); if(xBellBtn)xBellBtn.onclick=()=>{const p=$('#xBellPanel'); if(p){p.classList.toggle('hide'); if(!p.classList.contains('hide'))renderBell(window._xAudit||[])}};
+const xBellRead=$('#xBellRead'); if(xBellRead)xBellRead.onclick=()=>{const a=window._xAudit||[]; xBellSeen=a.length?Math.max(...a.map(x=>x.at||0)):Math.floor(Date.now()/1000); localStorage.setItem('x_bell_seen',xBellSeen); renderBell(a); toast('🔔 All caught up')};
+document.addEventListener('click',e=>{const p=$('#xBellPanel'); if(p&&!p.classList.contains('hide')&&!p.contains(e.target)&&e.target.id!=='xBell')p.classList.add('hide')});
+/* smart insights (computed from live analytics) */
+function renderInsights(){
+  const el=$('#xInsights'); if(!el||!xAnalytics||!xAnalytics.days||xAnalytics.days.length<2)return;
+  const days=xAnalytics.days;
+  const peak=days.reduce((a,b)=>(b.messages>a.messages?b:a),days[0]);
+  const half=Math.floor(days.length/2)||1;
+  const recent=days.slice(-half), prior=days.slice(0,half);
+  const avg=a=>a.reduce((t,d)=>t+(d.messages||0),0)/Math.max(1,a.length);
+  const trend=avg(prior)?Math.round(100*(avg(recent)-avg(prior))/avg(prior)):0;
+  const errAvg=days.reduce((t,d)=>t+(d.errors||0),0)/days.length;
+  const lastErr=days[days.length-1].errors||0;
+  const fw=(xAnalytics.frameworks||[])[0];
+  const depDay=days.reduce((a,b)=>(b.deploys>a.deploys?b:a),days[0]);
+  el.innerHTML=[
+    ['📈','<b>Peak traffic day:</b> '+esc(peak.date)+' with <b>'+(peak.messages||0).toLocaleString()+'</b> messages'],
+    [(trend>=0?'🚀':'📉'),'<b>Traffic trend:</b> '+(trend>=0?'+':'')+trend+'% in the recent half vs the prior half ('+Math.round(avg(recent)).toLocaleString()+' vs '+Math.round(avg(prior)).toLocaleString()+' msgs/day)'],
+    ['❌','<b>Error watch:</b> latest day has <b>'+lastErr+'</b> errors vs a '+errAvg.toFixed(1)+'/day average — '+(lastErr<=errAvg?'within normal range ✅':'above average, worth a look ⚠️')],
+    ['🧩','<b>Top framework:</b> '+(fw?esc(fw.name)+' at <b>'+fw.share+'%</b> of bots':'—')+' · best deploy day '+esc(depDay.date)+' ('+(depDay.deploys||0)+' deploys)']
+  ].map(x=>'<div class="insight"><span class="ic">'+x[0]+'</span><span>'+x[1]+'</span></div>').join('');
+}
+
 </script>
 </body>
 </html>

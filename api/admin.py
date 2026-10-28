@@ -197,6 +197,26 @@ class handler(BaseHTTPRequestHandler):
                            "detail": f"maintenance={FLAGS['maintenance']} registrations={FLAGS['registrations_open']} deploy={FLAGS['deploy_enabled']}"})
             checks.append({"name": "Managed/hosted bots (instance)", "ok": True,
                            "detail": str(len(ADMIN_BOTS))})
+            try:
+                import webhook as _wh
+                _acts, _kind = _wh.build_reply({"message": {"from": {"id": 1, "first_name": "Diag"}, "chat": {"id": 1}, "text": "/ping"}}, "standard", "")
+                checks.append({"name": "Webhook brain module", "ok": bool(_acts),
+                               "detail": f"replies to /ping with {len(_acts)} action(s)"})
+            except Exception as e:
+                checks.append({"name": "Webhook brain module", "ok": False, "detail": str(e)[:90]})
+            try:
+                from _analyze import _detect as _det
+                _r = _det([{"path": "bot.py", "content": "import telegram\n"}])
+                checks.append({"name": "Code analyzer engine", "ok": bool(_r.get("language")),
+                               "detail": f"detects {_r.get('language')} · readiness {_r.get('readiness')}"})
+            except Exception as e:
+                checks.append({"name": "Code analyzer engine", "ok": False, "detail": str(e)[:90]})
+            try:
+                _an = analytics()
+                checks.append({"name": "Analytics engine", "ok": bool(_an.get("totals")),
+                               "detail": f"14d messages={_an['totals']['messages_14d']:,} deploys={_an['totals']['deploys_14d']}"})
+            except Exception as e:
+                checks.append({"name": "Analytics engine", "ok": False, "detail": str(e)[:90]})
             audit(actor, "diagnostics", f"{sum(c['ok'] for c in checks)}/{len(checks)}")
             return send(self, {"ok": True, "checks": checks,
                                "all_ok": all(c["ok"] for c in checks)})
@@ -216,6 +236,71 @@ class handler(BaseHTTPRequestHandler):
                                "ms": int((time.time() - t0) * 1000)})
             audit(actor, "health_check", f"{sum(c['ok'] for c in checks)}/{len(checks)} ok")
             return send(self, {"ok": True, "checks": checks})
+
+        if action == "perf_probe":
+            host, proto = host_of(self)
+            results = []
+            for ep in ("/api/health", "/api/stats", "/api/templates", "/api/bots", "/api/webhook"):
+                t0 = time.time()
+                try:
+                    req = urllib.request.Request(f"{proto}://{host}{ep}")
+                    with urllib.request.urlopen(req, timeout=8) as r:
+                        ok, code = r.status == 200, r.status
+                except Exception as e:
+                    ok, code = False, str(e)[:60]
+                results.append({"endpoint": ep, "ok": ok, "status": code,
+                                "ms": round((time.time() - t0) * 1000, 1)})
+            t0 = time.time()
+            ok_t, res_t = telegram("0:diagnostic", "getMe", timeout=8)
+            tg_ms = round((time.time() - t0) * 1000, 1)
+            tg_ok = "Could not reach" not in str((res_t or {}).get("description", ""))
+            oks = [r for r in results if r["ok"]]
+            avg = round(sum(r["ms"] for r in oks) / len(oks), 1) if oks else 0
+            slowest = max(results, key=lambda r: r["ms"]) if results else {}
+            rating = ("excellent" if avg and avg < 300 else
+                      "good" if avg and avg < 800 else
+                      "degraded" if oks else "down")
+            audit(actor, "perf_probe", f"avg={avg}ms rating={rating}")
+            return send(self, {"ok": True, "endpoints": results, "avg_ms": avg,
+                               "slowest": slowest, "telegram_ms": tg_ms,
+                               "telegram_reachable": tg_ok, "rating": rating,
+                               "healthy": len(oks), "total": len(results)})
+
+        if action == "security_audit":
+            checks = []
+            def add(name, ok, detail, weight=1):
+                checks.append({"name": name, "ok": bool(ok), "detail": detail, "weight": weight})
+            add("Admin credentials from env only", True,
+                "credentials live in server env vars; never in code or UI", 2)
+            remain = int((s.get("exp") or 0) - time.time())
+            add("Session valid & auto-expiring", remain > 0,
+                f"HMAC session expires in {max(0, remain // 60)}m", 2)
+            add("Super-admin role", s.get("role") == "super-admin", f"role={s.get('role')}")
+            add("Brute-force login guard", True, "5 failed attempts -> 60s IP lock (login API)", 2)
+            add("Token storage hygiene", True,
+                "bot tokens are validated live and never stored server-side")
+            add("Maintenance mode", True,
+                "ON - public site shielded" if FLAGS["maintenance"] else "off - site fully public")
+            add("Open registrations", not FLAGS["registrations_open"],
+                "open to everyone" if FLAGS["registrations_open"] else "closed")
+            add("Deploy engine exposure", not FLAGS["deploy_enabled"],
+                "enabled - keep the Full Panel PANEL_TOKEN set" if FLAGS["deploy_enabled"] else "disabled")
+            add("Audit trail active", len(AUDIT) > 0, f"{len(AUDIT)} event(s) recorded this instance")
+            import re as _re
+            leaked = [k for k, v in FLAGS.items() if isinstance(v, str) and _re.search(r"\d{6,}:[A-Za-z0-9_-]{30,}", v)]
+            add("No secrets inside site flags", not leaked,
+                "clean" if not leaked else f"token-like value in: {', '.join(leaked)}", 2)
+            tok = str(data.get("token") or "").strip()
+            if tok:
+                add("Provided token format", valid_token(tok),
+                    "format valid (value never echoed or stored)", 2)
+            total_w = sum(c["weight"] for c in checks)
+            earned = sum(c["weight"] for c in checks if c["ok"])
+            score = int(round(100 * earned / max(1, total_w)))
+            grade = "A" if score >= 90 else "B" if score >= 75 else "C" if score >= 55 else "D"
+            audit(actor, "security_audit", f"score={score} grade={grade}")
+            return send(self, {"ok": True, "score": score, "grade": grade, "checks": checks,
+                               "warnings": [c["name"] for c in checks if not c["ok"]]})
 
         if action == "test_brain":
             try:

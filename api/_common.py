@@ -53,7 +53,9 @@ def query_of(handler):
 
 def host_of(handler):
     host = handler.headers.get("X-Forwarded-Host") or handler.headers.get("Host") or "localhost"
-    proto = handler.headers.get("X-Forwarded-Proto") or "https"
+    proto = handler.headers.get("X-Forwarded-Proto")
+    if not proto:  # direct (non-proxied) local/self-hosted call: avoid https->http mismatch
+        proto = "http" if host.split(":")[0] in ("localhost", "127.0.0.1", "::1") else "https"
     return host, proto
 
 
