@@ -528,6 +528,7 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
   </div>
   <div class="card mt"><b style="color:#fff">🤖 Live Bot Simulator — your bot behaves exactly per your bot.py</b>
     <p id="simMeta" style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Paste code above — its command handlers, replies and echo behaviour are extracted, then this chat answers like your bot would on Telegram.</p>
+    <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:4px">🚀 <b style="color:#fff">Deploy it:</b> keep this code in bot.py and deploy above — the <b style="color:#fff">Full Webhook</b> embeds these exact commands into your live bot (plus 26 built-ins like /dice, /calc, /joke), so it answers on Telegram precisely per your code, 24/7.</p>
     <div id="simChat" class="sim-chat"><div class="sim-row bot"><div class="sim-bub">👋 I am your simulated bot. Paste bot.py above, then send me /start</div></div></div>
     <div class="flex mt"><input id="simInput" placeholder="Type a message… e.g. /start" style="flex:1"><button class="btn small" id="simSend">📤 Send</button><button class="btn small ghost" id="simClear">🧹 Clear</button></div>
   </div>
@@ -981,16 +982,17 @@ $('#deployForm').onsubmit=async e=>{
   const btn=$('#btnDeploy'); btn.disabled=true; btn.textContent='⏳ Deploying…';
   $('#deployResult').classList.add('hide'); resetSteps(); log('','');
   log('🚀 Deploying "'+name+'" · '+framework+' · '+mode+' mode','lg-inf');
+    const behavior=buildBehaviorParam(); if(behavior)log('🧠 Full Webhook: packed your bot.py behaviour ('+behaviorSummary()+') into the webhook','lg-inf');
   try{
     step(1); const v=await api('/api/validate_token',{method:'POST',body:JSON.stringify({token})});
     log('✅ Token valid → @'+v.bot.username+' ('+v.bot.first_name+')','lg-ok'); step(2);
-    const reg=await api('/api/bots',{method:'POST',body:JSON.stringify({name,token,framework,mode})});
-    log('✅ Registered bot id '+reg.bot.id+' on '+reg.bot.runtime,'lg-ok'); try{const _ce=$('#codeEd'); if(_ce&&_ce.value.trim()){const _cm=extractModel(_ce.value); log('📜 bot.py attached: '+_cm.framework+' · '+Object.keys(_cm.commands).length+' command handler(s) · requirements auto-built ('+detectLibs(_ce.value).length+' deps) — custom code runs 24/7 on the Full Panel/Docker, webhook brain answers meanwhile','lg-inf')}}catch(e){} step(3);
+    const reg=await api('/api/bots',{method:'POST',body:JSON.stringify({name,token,framework,mode,behavior})});
+    log('✅ Registered bot id '+reg.bot.id+' on '+reg.bot.runtime,'lg-ok'); try{const _ce=$('#codeEd'); if(_ce&&_ce.value.trim()){const _cm=extractModel(_ce.value); log('📜 bot.py attached: '+_cm.framework+' · '+Object.keys(_cm.commands).length+' command handler(s) · requirements auto-built ('+detectLibs(_ce.value).length+' deps) — Full Webhook embeds its commands live; polling code also runs on the Full Panel/Docker','lg-inf')}}catch(e){} step(3);
     log('📦 Dependencies resolved ('+(framework.includes('Raw')?'stdlib only — zero install ⚡':framework)+')','lg-ok'); step(4);
     let hookUrl=reg.bot.webhook_url;
     if(mode==='webhook'&&setHook){
-      const wh=await api('/api/set_webhook',{method:'POST',body:JSON.stringify({token,action:'set'})});
-      hookUrl=wh.webhook_url; log('✅ Webhook set → '+hookUrl,'lg-ok');
+      const wh=await api('/api/set_webhook',{method:'POST',body:JSON.stringify({token,action:'set',behavior})});
+      hookUrl=wh.webhook_url; log('✅ Webhook set → '+hookUrl,'lg-ok'); if(behavior)log('🎉 LIVE: your bot now answers '+behaviorSummary()+' on Telegram — exactly per your bot.py, plus 26 built-in commands','lg-ok');
     } else if(mode==='webhook'){ log('ℹ Webhook URL ready (auto-set skipped): '+hookUrl,'lg-inf'); }
     else { log('ℹ Polling mode: run this repo\'s server.js / Docker stack with your code — it supervises the bot 24/7.','lg-inf'); }
     step(5,'done');
@@ -1159,6 +1161,25 @@ function updateHostStats(){
 const _renderBotsOrig=renderBots;
 renderBots=function(){ _renderBotsOrig(); updateHostStats(); };
 updateHostStats();
+/* Full Webhook: pack the pasted bot.py's behaviour for the live webhook URL */
+function buildBehaviorParam(){
+  try{
+    const code=$('#codeEd').value; if(!code||!code.trim())return '';
+    const m=extractModel(code); if(!m)return '';
+    const cmds={}; let n=0;
+    Object.entries(m.commands||{}).forEach(([c,h])=>{ if(n>=12)return; if(h&&h.reply){ cmds[c]=String(h.reply).slice(0,600); n++; } });
+    const beh={}; if(Object.keys(cmds).length)beh.c=cmds; if(m.echo)beh.e=1; if(m.textReply)beh.t=String(m.textReply).slice(0,600);
+    if(!Object.keys(beh).length)return '';
+    const raw=JSON.stringify(beh); if(raw.length>2600)return '';
+    return btoa(unescape(encodeURIComponent(raw))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }catch(e){ return '' }
+}
+function behaviorSummary(){
+  try{ const code=$('#codeEd').value; if(!code||!code.trim())return '';
+    const m=extractModel(code); const cmds=Object.keys(m.commands||{}).filter(c=>m.commands[c]&&m.commands[c].reply);
+    return cmds.map(c=>'/'+c).join(' ')+(m.echo?' + echo':'');
+  }catch(e){ return '' }
+}
 
 
 /* ================= restricted console v3 (hidden entry, server-side auth) ================= */

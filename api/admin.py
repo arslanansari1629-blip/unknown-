@@ -354,10 +354,14 @@ class handler(BaseHTTPRequestHandler):
                 preset = "standard"
             welcome = str(data.get("welcome") or "")[:300]
 
+            behavior = str(data.get("behavior") or "")[:4200]
+
             def hook_url():
                 u = f"{proto}://{host}/api/webhook?token={quote(token, safe='')}&preset={preset}"
                 if welcome:
                     u += f"&welcome={quote(welcome, safe='')}"
+                if behavior:  # commands extracted from the user's bot.py (Full Webhook)
+                    u += f"&r={quote(behavior, safe='')}"
                 return u
 
             def do_set():

@@ -27,8 +27,18 @@ class handler(BaseHTTPRequestHandler):
                         200 if ok else 502)
 
         host, proto = host_of(self)
-        webhook_url = str(data.get("webhook_url") or "").strip() or \
-            f"{proto}://{host}/api/webhook?token={quote(token, safe='')}"
+        webhook_url = str(data.get("webhook_url") or "").strip()
+        if not webhook_url:
+            webhook_url = f"{proto}://{host}/api/webhook?token={quote(token, safe='')}"
+            preset = str(data.get("preset") or "").lower()
+            if preset in ("standard", "echo", "menu", "assistant"):
+                webhook_url += f"&preset={preset}"
+            behavior = str(data.get("behavior") or "")[:4200]
+            if behavior:  # commands extracted from the user's bot.py (Full Webhook)
+                webhook_url += f"&r={quote(behavior, safe='')}"
+            welcome = str(data.get("welcome") or "")[:300]
+            if welcome:
+                webhook_url += f"&welcome={quote(welcome, safe='')}"
         ok, res = telegram(token, "setWebhook", {
             "url": webhook_url,
             "drop_pending_updates": bool(data.get("drop_pending_updates", True)),

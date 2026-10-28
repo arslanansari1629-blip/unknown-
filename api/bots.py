@@ -43,8 +43,15 @@ class handler(BaseHTTPRequestHandler):
                 bot_info = res["result"]
 
         host, proto = host_of(self)
-        webhook_url = (f"{proto}://{host}/api/webhook?token={quote(token, safe='')}"
-                       if token and mode == "webhook" else None)
+        webhook_url = None
+        if token and mode == "webhook":
+            webhook_url = f"{proto}://{host}/api/webhook?token={quote(token, safe='')}"
+            preset = str(data.get("preset") or "").lower()
+            if preset in ("standard", "echo", "menu", "assistant"):
+                webhook_url += f"&preset={preset}"
+            behavior = str(data.get("behavior") or "")[:4200]
+            if behavior:  # commands extracted from the user's bot.py (Full Webhook)
+                webhook_url += f"&r={quote(behavior, safe='')}"
         bot = {
             "id": bot_id, "name": name, "framework": framework, "mode": mode,
             "status": "live" if mode == "webhook" else "ready-for-vps",
