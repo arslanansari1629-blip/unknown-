@@ -307,7 +307,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v4 · keys 1-8 switch tabs</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v5 · keys 1-8 switch tabs</small></div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
       <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
@@ -427,6 +427,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
             <div class="flex mt">
               <label class="btn small" style="cursor:pointer">📁 Add Files<input type="file" id="xcFiles" multiple hidden></label>
               <label class="btn small ghost" style="cursor:pointer">🗂 Add Folder<input type="file" id="xcFolder" webkitdirectory hidden></label>
+              <label class="btn small ghost" style="cursor:pointer">📦 Add ZIP<input type="file" id="xcZipIn" accept=".zip,application/zip" hidden></label>
               <select id="xcSample" style="width:auto"><option value="">✨ Load sample…</option><option value="python">🐍 Python (PTB)</option><option value="node">🟢 Node (Telegraf)</option><option value="java">☕ Java (TelegramBots)</option><option value="go">🔵 Go</option><option value="rust">🦀 Rust (Teloxide)</option><option value="dotnet">🟣 C# / .NET</option><option value="php">🐘 PHP</option><option value="ruby">💎 Ruby</option><option value="bash">🐚 Bash</option></select>
             </div>
             <div id="xcDrop" class="dropzone">⬇️ Drag &amp; drop bot files here — .py .js .go .rb .php .java .rs .sh … any language</div>
@@ -440,7 +441,21 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
             <div class="flex mt"><button class="btn" id="xcAnalyze">🔍 Analyze Project</button><button class="btn ghost" id="xcSaveProj">💾 Save Project</button></div>
           </div>
           <div>
-            <div class="card"><b style="color:#fff">📊 Analysis Report</b><div id="xcReport" class="mt" style="font-size:13.5px;color:var(--mut);line-height:1.75">Add files and press Analyze — language, framework, entry file, dependencies, run mode &amp; risks are detected automatically.</div></div>
+            <div class="card"><b style="color:#fff">📊 Analysis Report</b><div id="xcReport" class="mt" style="font-size:13.5px;color:var(--mut);line-height:1.75">Add files and press Analyze — language, framework, entry file, dependencies, run mode &amp; risks are detected automatically.</div>
+              <div id="xcGenWrap" class="hide" style="margin-top:12px">
+                <div class="flex" id="xcGenTabs"></div>
+                <pre class="json" id="xcGenPre" style="max-height:240px;overflow:auto;margin-top:8px"></pre>
+                <button class="btn small ghost mt" id="xcGenCopy">📋 Copy File</button>
+              </div>
+            </div>
+            <div class="card mt"><b style="color:#fff">🖥️ Panel Manager</b> <span style="color:var(--mut);font-size:12.5px">— live control of process-hosted bots (any language)</span>
+              <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Connect to your Full Panel (URL in Host This Project) to see every hosted bot process and start / stop / restart / inspect logs without leaving this console.</p>
+              <div class="flex mt"><button class="btn small" id="xcPanelLoad">🔌 Load Panel Bots</button><label class="chk"><input type="checkbox" id="xcPanelAuto"> Auto-refresh 8s</label></div>
+              <div id="xcPanelBots" class="mt" style="font-size:13.5px;color:var(--mut)">Not connected yet.</div>
+              <pre class="json mt hide" id="xcPanelLogs" style="max-height:260px;overflow:auto"></pre>
+              <b style="color:#fff;display:block;margin-top:14px">🧾 Deploy History</b>
+              <div id="xcHistory" class="mt" style="font-size:13px;color:var(--mut);line-height:1.8">No deployments yet this browser.</div>
+            </div>
             <div class="card mt"><b style="color:#fff">🚀 Host This Project</b>
               <p style="color:var(--mut);font-size:13px;line-height:1.7;margin-top:6px"><b style="color:#fff">Any language / polling bots</b> need a real process host — that's the repo's Full Panel. <b style="color:#fff">Webhook Python/Node</b> can also run serverless.</p>
               <label>Full Panel URL (your server.js / Docker host, blank = download package only)</label><input id="xcPanelUrl" placeholder="https://my-panel.example.com">
@@ -1080,6 +1095,90 @@ window.xcCheckPanelLangs=async()=>{
   }catch(e){out.textContent='❌ Could not reach the panel ('+e.message+'). Check the URL is running & reachable from this browser.'}
 };
 xcRenderHub();
+/* ================= console v5: zip import / gen viewer / panel manager / history ================= */
+async function xcInflate(u8){const ds=new DecompressionStream('deflate-raw');const st=new Blob([u8]).stream().pipeThrough(ds);return new Uint8Array(await new Response(st).arrayBuffer())}
+window.xcExtractZip=async file=>{
+  try{
+    const buf=new Uint8Array(await file.arrayBuffer()); const dv=new DataView(buf.buffer,buf.byteOffset,buf.byteLength); const dec=new TextDecoder();
+    let eocd=-1; for(let i=buf.length-22;i>=Math.max(0,buf.length-66000);i--){if(dv.getUint32(i,true)===0x06054b50){eocd=i;break}}
+    if(eocd<0){toast('❌ Not a valid ZIP file');return}
+    const count=dv.getUint16(eocd+10,true); let off=dv.getUint32(eocd+16,true); let added=0,skipped=0;
+    for(let n=0;n<count;n++){
+      if(off+46>buf.length||dv.getUint32(off,true)!==0x02014b50)break;
+      const method=dv.getUint16(off+10,true),csize=dv.getUint32(off+20,true),nlen=dv.getUint16(off+28,true),elen=dv.getUint16(off+30,true),clen=dv.getUint16(off+32,true),loff=dv.getUint32(off+42,true);
+      const name=dec.decode(buf.slice(off+46,off+46+nlen)); off+=46+nlen+elen+clen;
+      if(name.endsWith('/'))continue; if(csize>300000){skipped++;continue}
+      const lnlen=dv.getUint16(loff+26,true),lelen=dv.getUint16(loff+28,true); const start=loff+30+lnlen+lelen;
+      let data=buf.slice(start,start+csize);
+      try{ if(method===8)data=await xcInflate(data); else if(method!==0){skipped++;continue} }catch(e){skipped++;continue}
+      const text=dec.decode(data); if(text.includes('\u0000')){skipped++;continue}
+      xcUpsert(name,text); added++;
+    }
+    xcRenderFiles(); toast('📦 ZIP extracted: '+added+' file(s)'+(skipped?' · '+skipped+' skipped':''));
+  }catch(e){toast('❌ ZIP failed: '+e.message)}
+};
+const _xcReadFiles=xcReadFiles;
+xcReadFiles=async list=>{const zips=[...list].filter(f=>/\.zip$/i.test(f.name));const rest=[...list].filter(f=>!/\.zip$/i.test(f.name));for(const z of zips)await xcExtractZip(z);if(rest.length)await _xcReadFiles(rest)};
+$('#xcZipIn').addEventListener('change',e=>{if(e.target.files[0])xcExtractZip(e.target.files[0])});
+/* generated files viewer */
+let xcGenFiles={},xcGenCur='Dockerfile';
+window.xcGenTab=n=>{xcGenCur=n;xcGenShow()};
+function xcGenShow(){
+  const tabs=$('#xcGenTabs'),pre=$('#xcGenPre'); if(!tabs)return;
+  tabs.innerHTML=Object.keys(xcGenFiles).map(n=>'<button class="btn small '+(n===xcGenCur?'':'ghost')+'" onclick="xcGenTab(\''+n+'\')">'+esc(n)+'</button>').join('');
+  pre.textContent=xcGenFiles[xcGenCur]||'';
+}
+window.xcRenderGen=()=>{
+  if(!xcReport){$('#xcGenWrap').classList.add('hide');return}
+  const g=xcReport.generated||{}; xcGenFiles={};
+  if(g.Dockerfile)xcGenFiles['Dockerfile']=g.Dockerfile;
+  if(g.Procfile)xcGenFiles['Procfile']=g.Procfile;
+  xcGenFiles['pytelehost.json']=JSON.stringify(g.manifest||xcReport,null,2);
+  try{const dep=projectPackageFiles().find(f=>f.path==='DEPLOY.md'); if(dep)xcGenFiles['DEPLOY.md']=dep.content}catch(e){}
+  xcGenCur='Dockerfile'; $('#xcGenWrap').classList.remove('hide'); xcGenShow();
+};
+$('#xcGenCopy').onclick=()=>{const t=$('#xcGenPre').textContent; if(navigator.clipboard)navigator.clipboard.writeText(t); toast('📋 Copied '+xcGenCur)};
+/* deploy history */
+const DHKEY='x_deploy_hist_v1'; let xcHist=[]; try{xcHist=JSON.parse(localStorage.getItem(DHKEY)||'[]')}catch(e){}
+window.xcHistPush=(name,lang,target,ok)=>{xcHist.unshift({name:name||'telegram-bot',lang:lang||'-',target,ok:!!ok,at:Date.now()});xcHist=xcHist.slice(0,20);try{localStorage.setItem(DHKEY,JSON.stringify(xcHist))}catch(e){} xcRenderHist()};
+function xcRenderHist(){
+  const el=$('#xcHistory'); if(!el)return;
+  el.innerHTML=xcHist.length?xcHist.map(h=>'<div>'+(h.ok?'✅':'❌')+' <b style="color:#fff">'+esc(h.name)+'</b> · '+esc(h.lang)+' → '+esc(h.target)+' <small style="color:var(--mut)">'+new Date(h.at).toLocaleString()+'</small></div>').join(''):'No deployments yet this browser.';
+}
+xcRenderHist();
+/* panel manager */
+function xcPanelBase(){return ($('#xcPanelUrl').value||'').trim().replace(/\/+$/,'')}
+function xcPanelHeaders(){const h={};const t=($('#xcPanelToken').value||'').trim();if(t)h['X-Panel-Token']=t;return h}
+function xcFmtUp(ms){if(!ms)return '-';const s=Math.floor(ms/1000);return s<60?s+'s':s<3600?Math.floor(s/60)+'m':Math.floor(s/3600)+'h '+Math.floor(s%3600/60)+'m'}
+window.xcPanelLoad=async()=>{
+  const el=$('#xcPanelBots'); const base=xcPanelBase();
+  if(!base){el.textContent='Set your Full Panel URL in “Host This Project” first.';return}
+  el.textContent='⏳ Connecting to '+base+' …';
+  try{
+    const r=await fetch(base+'/api/bots',{headers:xcPanelHeaders()}); const d=await r.json();
+    const bots=d.bots||[];
+    el.innerHTML=bots.length?'<div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Language</th><th>Status</th><th>PID</th><th>Uptime</th><th></th></tr></thead><tbody>'+bots.map(b=>'<tr><td><b style="color:#fff">'+esc(b.name||b.id)+'</b></td><td><span class="tag">'+esc(b.runtimeLabel||b.runtime||'-')+'</span></td><td><span class="hstat '+((b.status==='running'||b.status==='live')?'live':'off')+'">'+esc(b.status||'-')+'</span></td><td>'+(b.pid||'-')+'</td><td>'+xcFmtUp(b.uptimeMs)+'</td><td><div class="hact"><button class="btn small" onclick="xcPanelAct(\''+b.id+'\',\'start\')">▶</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'stop\')">⏹</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'restart\')">↻</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'logs\')">📜</button><button class="btn small danger" onclick="xcPanelAct(\''+b.id+'\',\'delete\')">🗑</button></div></td></tr>').join('')+'</tbody></table></div>':'Panel connected — no bots hosted yet. Deploy one above! 🚀';
+  }catch(e){el.textContent='❌ Could not reach panel: '+e.message}
+};
+window.xcPanelAct=async(id,act)=>{
+  const base=xcPanelBase(); const logsEl=$('#xcPanelLogs');
+  try{
+    if(act==='logs'){
+      const r=await fetch(base+'/api/bots/'+id+'/logs?limit=200',{headers:xcPanelHeaders()}); const d=await r.json();
+      const lines=(d.logs||[]).map(l=>typeof l==='string'?l:('['+(l.s||l.stream||l.type||'log')+'] '+(l.m||l.text||l.message||JSON.stringify(l))));
+      logsEl.classList.remove('hide'); logsEl.textContent=lines.join('\n')||'(no logs yet)'; logsEl.scrollTop=logsEl.scrollHeight; return;
+    }
+    if(act==='delete'&&!confirm('Delete this hosted bot from the panel?'))return;
+    const r=await fetch(base+'/api/bots/'+id+(act==='delete'?'':'/'+act),{method:act==='delete'?'DELETE':'POST',headers:xcPanelHeaders()});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
+    toast('✅ Panel: '+act+' done'); xcPanelLoad();
+  }catch(e){toast('❌ Panel '+act+' failed: '+e.message)}
+};
+$('#xcPanelLoad').onclick=()=>xcPanelLoad();
+let xcPanelTimer=null;
+$('#xcPanelAuto').addEventListener('change',e=>{clearInterval(xcPanelTimer); if(e.target.checked){xcPanelLoad(); xcPanelTimer=setInterval(xcPanelLoad,8000)} toast(e.target.checked?'🔄 Panel auto-refresh on':'⏸ Panel auto-refresh off')});
+
 $('#xcAddFile').onclick=()=>{const p=$('#xcNewPath').value.trim();if(!p){toast('Type a file path first');return}xcUpsert(p,$('#xcEditor').value&&xcActive===p?$('#xcEditor').value:'');xcActive=p;$('#xcActiveName').textContent=p;$('#xcEditor').value=(xcFilesArr.find(f=>f.path===p)||{}).content||'';$('#xcNewPath').value='';xcRenderFiles()};
 $('#xcDelFile').onclick=()=>{if(!xcActive){toast('Select a file first');return}xcFilesArr=xcFilesArr.filter(f=>f.path!==xcActive);xcActive=xcFilesArr[0]?xcFilesArr[0].path:null;$('#xcEditor').value=xcActive?(xcFilesArr[0].content):'';$('#xcActiveName').textContent=xcActive||'—';xcRenderFiles()};
 $('#xcEditor').addEventListener('input',()=>{xcSyncEditor();xcRenderFilesSoft()});
@@ -1090,7 +1189,7 @@ $('#xcAnalyze').onclick=async()=>{
   const out=$('#xcReport'); out.textContent='⏳ Analyzing '+xcFilesArr.length+' file(s)…';
   try{
     const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'analyze_project',files:xcFilesArr,start_command:$('#xcStart').value.trim()})});
-    xcReport=d.report; renderReport(); toast('🔍 Analysis complete: '+xcReport.language);
+    xcReport=d.report; renderReport(); xcRenderGen(); toast('🔍 Analysis complete: '+xcReport.language);
   }catch(e){out.textContent='❌ '+e.message}
 };
 function renderReport(){
@@ -1140,7 +1239,7 @@ function downloadZip(){
   if(!xcFilesArr.length){toast('Add files first');return}
   const name=($('#xcName').value.trim()||'telegram-bot')+'.zip';
   const a=document.createElement('a'); a.href=URL.createObjectURL(makeZipBlob(projectPackageFiles())); a.download=name; a.click();
-  $('#xcOut').textContent='⬇️ Downloaded '+name+' — upload it into the Full Panel, or unzip & docker build.';
+  $('#xcOut').textContent='⬇️ Downloaded '+name+' — upload it into the Full Panel, or unzip & docker build.'; xcHistPush(($('#xcName').value.trim()||'telegram-bot'), xcReport?xcReport.language:'custom', 'Deployment ZIP', true);
 }
 $('#xcZip').onclick=downloadZip;
 $('#xcDockerCopy').onclick=()=>{const cmd='docker build -t mybot .\ndocker run -d --restart always --name mybot -e BOT_TOKEN=YOUR_TOKEN mybot\ndocker logs -f mybot';navigator.clipboard.writeText(cmd);toast('📋 Docker commands copied')};
@@ -1171,6 +1270,7 @@ $('#xcDeployPanel').onclick=async()=>{
     let d={}; try{d=await r.json()}catch(e){}
     if(!r.ok)throw new Error(d.error||('Panel HTTP '+r.status));
     out.textContent='🎉 DEPLOYED to Full Panel!\nBot: '+(d.bot.name||'')+' · '+(d.bot.runtime||xcReport.language)+' · entry '+(d.bot.entry||xcReport.entry||'-')+'\nStatus: '+(d.bot.status||'starting')+' — it is being installed & supervised 24/7 by the panel.\nManage it at: '+panelUrl;
+    xcHistPush(($('#xcName').value.trim()||'telegram-bot'), xcReport?xcReport.language:'custom', 'Full Panel', true);
     toast('🎉 Bot deployed to Full Panel & starting!');
   }catch(e){out.textContent='❌ Deploy failed: '+e.message+'\nCheck: panel is running, URL is correct/reachable from your browser, PANEL_TOKEN matches. Tip: download the ZIP and upload it manually in the panel.'}
 };
