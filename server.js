@@ -1441,6 +1441,34 @@ app.get('/api/bots/:id/telegram', async (req, res, next) => {
   }
 });
 
+/* -------------------- PyTeleHost Ultra (Vercel parity) ------------------ */
+// Same token check the Python serverless API (/api/validate_token) performs,
+// so the Ultra frontend works identically on this Node stack.
+app.post(['/api/validate_token', '/api/validate-token'], async (req, res) => {
+  const token = String((req.body && req.body.token) || '').trim();
+  if (!token) return res.status(400).json({ ok: false, error: 'Send {"token": "123456:ABC..."}' });
+  if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) {
+    return res.status(400).json({ ok: false, valid: false, error: 'Token format looks invalid (expected 123456789:AA...)' });
+  }
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const r2 = https.get(`https://api.telegram.org/bot${token}/getMe`, { timeout: 10000 }, (r) => {
+        let body = '';
+        r.on('data', (d) => { body += d; });
+        r.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('Invalid response from Telegram')); } });
+      });
+      r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout')));
+      r2.on('error', reject);
+    });
+    if (!data.ok) return res.status(400).json({ ok: false, valid: false, error: data.description || 'Telegram rejected the token' });
+    const me = data.result;
+    res.json({ ok: true, valid: true, bot: { id: me.id, username: me.username, first_name: me.first_name, can_join_groups: me.can_join_groups, can_read_all_group_messages: me.can_read_all_group_messages, supports_inline_queries: me.supports_inline_queries, url: me.username ? `https://t.me/${me.username}` : null } });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: `Could not reach Telegram: ${e.message}` });
+  }
+});
+app.get('/ultra', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+
 /* ------------------------------ frontend -------------------------------- */
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 app.get('/favicon.ico', (req, res) => res.status(204).end());
