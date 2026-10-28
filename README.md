@@ -12,6 +12,50 @@ Backend   : server.js    (one single file — Express + WebSocket + supervisor)
 
 ---
 
+## ⚡ PyTeleHost Ultra — Python Telegram Hosting on Vercel (NEW)
+
+**Live: https://pytelehost-ultra.vercel.app**
+
+The Vercel-native edition: Python Telegram bots hosted as **serverless webhooks** —
+Telegram pushes every update to a Python function (`api/webhook.py`) that answers
+`/start /help /ping /echo /id /about`, then sleeps for free. True 24/7, zero idle cost.
+
+```
+public/index.html  Ultra console (deploy, validate, templates, playground, pricing)
+api/health.py      GET  /api/health          platform + runtime info
+api/stats.py       GET  /api/stats           platform stats & plans
+api/templates.py   GET  /api/templates       6 production Python bot templates
+api/validate_token.py POST /api/validate_token  real Telegram getMe check
+api/bots.py        POST /api/bots            register a bot (in-memory registry)
+api/set_webhook.py POST /api/set_webhook     set/delete/inspect Telegram webhook
+api/webhook.py     POST /api/webhook?token=… the hosted bot brain (demo: ?demo=1)
+vercel.json        static `public/` + Python functions, zero build
+```
+
+**Deploy your bot:** open the live site → paste your `@BotFather` token → *Validate* →
+*Deploy Bot Now* (webhook is set for real) → open your bot and send `/start`.
+
+**Deploy this repo to your own Vercel:** import the repository, keep the included
+`vercel.json` (no build command, output `public/`), done. Locally the same Ultra UI
+is served by the Node panel at `http://localhost:8080/ultra`, and the classic full
+panel (polling bots, file manager, WebSocket logs) stays at `/`.
+
+> Webhook mode is the correct architecture for Vercel (serverless). For long-polling
+> code (`run_polling` / `start_polling`) use this repo's `server.js` / Docker stack,
+> which supervises processes with auto-restart forever.
+
+### 🛡️ Restricted operator console
+
+A hidden, full-control console (platform overview, bot registry, webhook control
+for any bot, site-wide maintenance/announcement/section flags, danger-zone actions,
+audit log) is built in. It is **not linked or referenced anywhere in the UI** and
+credentials are never in code: set `ADMIN_USERNAME` / `ADMIN_PASSWORD` as encrypted
+environment variables (Vercel project settings, or your shell for `server.js`).
+Sessions are HMAC-signed, expire after 2 hours, and sign-in is rate-limited.
+APIs: `POST /api/admin_login`, `GET|POST /api/admin` (Bearer session).
+
+---
+
 ## ✨ Features
 
 | | |

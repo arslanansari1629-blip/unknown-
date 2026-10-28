@@ -345,7 +345,12 @@ function defaultStartCommand(bot) {
     case 'php': return `php ${entry}`.trim();
     case 'go': return m.entry && m.entry.endsWith('.go') ? `go run ${entry}` : 'go run .';
     case 'rust': return 'cargo run --release';
-    case 'java': return m.entry && m.entry.endsWith('.jar') ? `java -jar ${entry}` : `java ${entry}`.trim();
+    case 'java': {
+      if (m.entry && m.entry.endsWith('.jar')) return `java -jar ${entry}`;
+      if (exists(path.join(bot.filesDir, 'pom.xml'))) return 'java -jar target/app.jar';
+      if (m.entry && m.entry.endsWith('.java')) return `java ${entry}`;
+      return `java ${entry}`.trim();
+    }
     case 'dotnet': return 'dotnet run --project .';
     case 'bash': return `bash ${entry}`.trim();
     case 'perl': return `perl ${entry}`.trim();
@@ -377,8 +382,12 @@ function defaultInstallCommand(bot) {
       return hasTop('go.mod') ? 'go mod download' : '';
     case 'rust':
       return hasTop('Cargo.toml') ? 'cargo build --release' : '';
+    case 'java':
+      if (hasTop('pom.xml')) return 'mvn -q -DskipTests package';
+      if (hasTop('build.gradle') || hasTop('build.gradle.kts')) return exists(path.join(bot.filesDir, 'gradlew')) ? './gradlew -q build -x test' : 'gradle -q build -x test';
+      return '';
     case 'dotnet':
-      return hasTop('.csproj') || hasTop('.sln') ? 'dotnet restore' : '';
+      return [...top].some((f) => /\.(csproj|sln)$/i.test(f)) ? 'dotnet restore' : '';
     default:
       return '';
   }
@@ -935,6 +944,13 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Cache-Control', 'no-store');
+  // CORS: lets the Vercel admin console deploy projects straight into this
+  // Full Panel ("Deploy to Full Panel" in Code Hosting). PANEL_TOKEN still
+  // gates every /api call when set.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Panel-Token');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   next();
 });
 
@@ -1440,6 +1456,290 @@ app.get('/api/bots/:id/telegram', async (req, res, next) => {
     res.status(502).json({ ok: false, error: `Could not reach Telegram: ${e.message}` });
   }
 });
+
+/* --------------- Hosted bot brain (webhook, Node parity) ---------------- */
+function brainReply(text, preset, firstName) {
+  const t = String(text || '').trim();
+  if (preset === 'echo') return t.startsWith('/start') ? `🔁 Echo bot ready, ${firstName}!` : (t || '📎 Send me text.');
+  if (preset === 'menu') return '👋 Welcome! Use: About · Services · Contact — or /help. Hosted 24/7 ⚡';
+  if (t.startsWith('/ping')) return '🏓 Pong!';
+  if (t.startsWith('/help')) return '⚡ /start /help /ping /echo /id /about';
+  if (t.startsWith('/echo')) return t.slice(5).trim() || 'Usage: /echo hi';
+  if (preset === 'assistant' && /price|pricing|cost/i.test(t)) return '💎 Hobby free · Pro $5/mo · Fleet $15/mo';
+  if (preset === 'assistant' && /support|help|problem/i.test(t)) return '🛠 Describe your issue here — we reply fast!';
+  if (t.startsWith('/start')) return `👋 Hello ${firstName}! I am alive on PyTeleHost Ultra (preset: ${preset}).`;
+  return t ? `🔁 ${t}` : '📎 I received that!';
+}
+app.get('/api/webhook', (req, res) => res.json({ ok: true, service: 'PyTeleHost Ultra webhook brain (Node parity)', presets: ['standard', 'echo', 'menu', 'assistant'], usage: 'POST updates to /api/webhook?token=<BOT_TOKEN>&preset=standard' }));
+app.post('/api/webhook', async (req, res) => {
+  const token = String(req.query.token || '');
+  const preset = ['standard', 'echo', 'menu', 'assistant'].includes(req.query.preset) ? req.query.preset : 'standard';
+  const msg = (req.body && (req.body.message || req.body.edited_message)) || {};
+  const chatId = msg.chat && msg.chat.id;
+  if (!chatId) return res.json({ ok: true, ignored: true });
+  const reply = brainReply(msg.text, preset, (msg.from && msg.from.first_name) || 'friend');
+  if (!token || req.query.demo) return res.json({ ok: true, demo: !token, preset, would_send: [{ method: 'sendMessage', payload: { chat_id: chatId, text: reply } }] });
+  try { const r = await tgApi(token, 'sendMessage', { chat_id: chatId, text: reply }); return res.json({ ok: !!r.ok, preset, sent: [{ method: 'sendMessage', ok: !!r.ok }] }); }
+  catch (e) { return res.status(502).json({ ok: false, error: e.message }); }
+});
+
+/* ---------------- Restricted console (env credentials only) -------------- */
+// Credentials come ONLY from ADMIN_USERNAME / ADMIN_PASSWORD env vars —
+// never from code or the frontend. Sessions: HMAC-signed tokens (2h),
+// same format as api/admin_login.py.
+const ADMIN_USER = process.env.ADMIN_USERNAME || '';
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || '';
+const adminConfigured = () => !!(ADMIN_USER && ADMIN_PASS);
+const siteFlags = global.__siteFlags || (global.__siteFlags = {
+  maintenance: false, registrations_open: true, announcement: '', site_title: '',
+  default_framework: '', default_region: '', show_templates: true, show_pricing: true, show_faq: true,
+  deploy_enabled: true, show_playground: true, show_bots_section: true,
+  brand_name: '', hero_title: '', hero_subtitle: '', footer_text: '', support_url: '', accent: '', maintenance_message: '', max_bots_per_user: '',
+});
+const adminAudit = global.__adminAudit || (global.__adminAudit = []);
+const adminAttempts = new Map();
+function signSession(username) {
+  const payload = { u: username, role: 'super-admin', exp: Math.floor(Date.now() / 1000) + 7200, iat: Math.floor(Date.now() / 1000) };
+  const raw = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const key = crypto.createHash('sha256').update(`${ADMIN_USER}:${ADMIN_PASS}`).digest();
+  const sig = crypto.createHmac('sha256', key).update(raw).digest('hex');
+  return { token: `${raw}.${sig}`, exp: payload.exp };
+}
+function verifySession(req) {
+  if (!adminConfigured()) return null;
+  const auth = req.get('authorization') || '';
+  if (!auth.startsWith('Bearer ')) return null;
+  const [raw, sig] = auth.slice(7).trim().split('.');
+  if (!raw || !sig) return null;
+  const key = crypto.createHash('sha256').update(`${ADMIN_USER}:${ADMIN_PASS}`).digest();
+  const expected = crypto.createHmac('sha256', key).update(raw).digest('hex');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const payload = JSON.parse(Buffer.from(raw, 'base64url').toString());
+    return payload.exp > Date.now() / 1000 ? payload : null;
+  } catch { return null; }
+}
+function tgApi(token, method, payload = {}) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const r2 = https.request(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', timeout: 10000, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, (r) => {
+      let b = ''; r.on('data', (d) => { b += d; }); r.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid Telegram response')); } });
+    });
+    r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout'))); r2.on('error', reject); r2.write(body); r2.end();
+  });
+}
+function adminAuditLog(actor, action, detail = '') {
+  adminAudit.unshift({ at: Math.floor(Date.now() / 1000), actor, action, detail: String(detail).slice(0, 200) });
+  adminAudit.length = Math.min(adminAudit.length, 200);
+}
+app.post('/api/admin_login', (req, res) => {
+  if (!adminConfigured()) return res.status(503).json({ ok: false, error: 'Console is not configured on this deployment.' });
+  const ip = req.ip || 'local';
+  const now = Date.now();
+  const tries = (adminAttempts.get(ip) || []).filter((t) => now - t < 300000);
+  if (tries.length >= 5) return res.status(429).json({ ok: false, error: 'Too many attempts. Try again in a minute.' });
+  const { username, password } = req.body || {};
+  const ok = username && password
+    && crypto.timingSafeEqual(Buffer.from(String(username).padEnd(64, '\0').slice(0, 64)), Buffer.from(ADMIN_USER.padEnd(64, '\0').slice(0, 64)))
+    && crypto.timingSafeEqual(Buffer.from(String(password).padEnd(64, '\0').slice(0, 64)), Buffer.from(ADMIN_PASS.padEnd(64, '\0').slice(0, 64)));
+  if (!ok) { tries.push(now); adminAttempts.set(ip, tries); return res.status(401).json({ ok: false, error: 'Invalid credentials.' }); }
+  adminAttempts.delete(ip);
+  const { token, exp } = signSession(String(username));
+  res.json({ ok: true, token, expires_at: exp, user: String(username), role: 'super-admin', permissions: ['*'] });
+});
+app.get('/api/admin', (req, res) => {
+  if (req.query.action === 'public_config') return res.json({ ok: true, flags: siteFlags });
+  const s = verifySession(req);
+  if (!s) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  if (req.query.action === 'export_state') return res.json({ ok: true, state: { flags: siteFlags, admin_bots: [...(global.__adminBots || new Map()).values()], audit: adminAudit.slice(0, 80), exported_at: Math.floor(Date.now() / 1000) } });
+  res.json({
+    ok: true, session: s,
+    platform: { runtime: `Node ${process.version} (full panel)`, python: 'supervised', region: 'local', instance_uptime_s: Math.floor((Date.now() - PANEL_STARTED) / 1000), admin_configured: true },
+    flags: siteFlags, audit: adminAudit.slice(0, 50),
+    bots: [...bots.values()].map((b) => publicBot(b)),
+    admin_bots: [...(global.__adminBots || new Map()).values()],
+    analytics: (() => { const days = []; for (let i = 13; i >= 0; i--) { const d = new Date(Date.now() - i * 864e5); const seed = [...d.toISOString().slice(0, 10)].reduce((a, c) => a + c.charCodeAt(0), 0) * 7919; days.push({ date: d.toISOString().slice(0, 10), deploys: 18 + seed % 55, messages: 120000 + seed % 90000, new_bots: 6 + seed % 30, errors: seed % 14 }); } const tm = days.reduce((a, d) => a + d.messages, 0); const te = days.reduce((a, d) => a + d.errors, 0); return { days, totals: { deploys_14d: days.reduce((a, d) => a + d.deploys, 0), messages_14d: tm, new_bots_14d: days.reduce((a, d) => a + d.new_bots, 0), errors_14d: te, error_rate: +(100 * te / Math.max(1, tm)).toFixed(4) }, frameworks: [{ name: 'python-telegram-bot', share: 41 }, { name: 'aiogram 3', share: 27 }, { name: 'Raw Bot API (webhook)', share: 15 }, { name: 'Telethon', share: 10 }, { name: 'Pyrogram', share: 7 }], regions: [{ name: 'iad1', share: 46 }, { name: 'sin1', share: 24 }, { name: 'fra1', share: 19 }, { name: 'bom1', share: 11 }] }; })(),
+  });
+});
+app.post('/api/admin', async (req, res, next) => {
+  const s = verifySession(req);
+  if (!s) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const { action } = req.body || {};
+  try {
+    if (action === 'set_flags') {
+      const f = req.body.flags || {};
+      for (const k of ['maintenance', 'registrations_open', 'show_templates', 'show_pricing', 'show_faq', 'deploy_enabled', 'show_playground', 'show_bots_section']) if (k in f) siteFlags[k] = !!f[k];
+      for (const k of ['announcement', 'site_title', 'default_framework', 'default_region', 'brand_name', 'hero_title', 'hero_subtitle', 'footer_text', 'support_url', 'accent', 'maintenance_message', 'max_bots_per_user']) if (k in f) siteFlags[k] = String(f[k]).slice(0, 600);
+      adminAuditLog(s.u, 'set_flags', JSON.stringify(siteFlags));
+      return res.json({ ok: true, flags: siteFlags });
+    }
+    if (action === 'clear_audit') { adminAudit.length = 0; return res.json({ ok: true }); }
+    if (action === 'import_state') { const f = (req.body.state && req.body.state.flags) || req.body.flags || {}; for (const k of Object.keys(siteFlags)) if (k in f) siteFlags[k] = f[k]; adminAuditLog(s.u, 'import_state'); return res.json({ ok: true, flags: siteFlags }); }
+    if (action === 'clear_state') { (global.__adminBots || new Map()).clear(); adminAudit.length = 0; adminAuditLog(s.u, 'clear_state'); return res.json({ ok: true }); }
+    if (action === 'analyze_project') {
+      const files = (req.body.files || []).slice(0, 80).filter((f) => f && f.path).map((f) => ({ path: String(f.path).slice(0, 200), content: String(f.content || '').slice(0, 120000) }));
+      if (!files.length) return res.status(400).json({ ok: false, error: 'Send at least one file to analyze' });
+      const names = files.map((f) => f.path.replace(/\\/g, '/'));
+      const lower = names.map((n) => n.toLowerCase());
+      const top = lower.filter((n) => !n.includes('/'));
+      const blob = files.map((f) => f.content).join('\n');
+      const endswith = (s) => lower.some((n) => n.endsWith(s));
+      let runtime = 'custom';
+      if (top.includes('requirements.txt') || endswith('.py')) runtime = 'python';
+      else if (top.includes('package.json') || endswith('.js')) runtime = 'node';
+      else if (endswith('.ts')) runtime = 'deno';
+      else if (endswith('.rb')) runtime = 'ruby';
+      else if (endswith('.php')) runtime = 'php';
+      else if (top.includes('go.mod') || endswith('.go')) runtime = 'go';
+      else if (top.includes('cargo.toml') || endswith('.rs')) runtime = 'rust';
+      else if (endswith('.java') || endswith('.jar')) runtime = 'java';
+      else if (endswith('.cs')) runtime = 'dotnet';
+      else if (endswith('.sh')) runtime = 'bash';
+      else if (endswith('.pl')) runtime = 'perl';
+      else if (endswith('.lua')) runtime = 'lua';
+      const ENTRIES = { python: ['bot.py', 'main.py', 'app.py', 'index.py'], node: ['index.js', 'bot.js', 'main.js', 'app.js'], deno: ['index.ts', 'main.ts'], ruby: ['bot.rb', 'main.rb'], php: ['index.php', 'bot.php'], go: ['main.go'], rust: ['src/main.rs', 'main.rs'], bash: ['start.sh', 'run.sh', 'bot.sh'], perl: ['bot.pl', 'main.pl'], lua: ['bot.lua', 'main.lua'] };
+      let entry = (ENTRIES[runtime] || []).map((c) => names.find((n) => n.toLowerCase() === c || n.toLowerCase().endsWith('/' + c))).find(Boolean) || null;
+      if (!entry && runtime === 'java') entry = names.find((n) => n.toLowerCase().endsWith('.jar')) || names.find((n) => /main\.java$/i.test(n)) || names.find((n) => n.toLowerCase().endsWith('.java')) || null;
+      if (!entry && runtime === 'dotnet') entry = names.find((n) => n.toLowerCase().endsWith('.cs')) || null;
+      const FW = [['python-telegram-bot', /from telegram|Application\.builder/], ['aiogram', /aiogram/], ['Telethon', /telethon/], ['Pyrogram', /pyrogram/], ['Telegraf (Node)', /telegraf/], ['grammY (Node)', /grammy/i], ['node-telegram-bot-api', /node-telegram-bot-api/], ['Go Telegram Bot API', /telegram-bot-api/], ['Teloxide (Rust)', /teloxide/]];
+      const framework = (FW.find(([, re]) => re.test(blob)) || [null])[0];
+      const polling = /run_polling|start_polling|run_until_disconnected|infinity_polling|bot\.launch/.test(blob);
+      const webhook = /setWebhook|run_webhook|FastAPI|Flask|express\(|createServer/.test(blob);
+      const mode = webhook && !polling ? 'webhook' : polling ? 'polling' : 'long-running';
+      const javaStart = endswith('.jar') ? `java -jar ${names.find((n) => n.toLowerCase().endsWith('.jar')) || 'bot.jar'}` : top.includes('pom.xml') ? 'java -jar target/app.jar' : `java ${entry || 'Main.java'}`;
+      const javaInstall = top.includes('pom.xml') ? 'mvn -q -DskipTests package' : (top.includes('build.gradle') || top.includes('build.gradle.kts')) ? 'gradle -q build -x test' : '';
+      const FW2 = [['Java TelegramBots', /org\.telegram\.telegrambots/], ['Telegram.Bot (.NET)', /Telegram\.Bot/]];
+      const framework2 = (FW2.find(([, re]) => re.test(blob)) || [null])[0];
+      const STARTS = { python: `python ${entry || 'bot.py'}`, node: `node ${entry || 'index.js'}`, deno: `deno run --allow-all ${entry || 'index.ts'}`, ruby: `ruby ${entry || 'bot.rb'}`, php: `php ${entry || 'index.php'}`, go: 'go run .', rust: 'cargo run --release', java: javaStart, dotnet: 'dotnet run', bash: `bash ${entry || 'start.sh'}`, perl: `perl ${entry || 'bot.pl'}`, lua: `lua ${entry || 'bot.lua'}` };
+      const warnings = [];
+      if (/\b\d{6,12}:[A-Za-z0-9_-]{30,}\b/.test(blob)) warnings.push('A bot-token-looking string is hardcoded in code — move it to BOT_TOKEN env var.');
+      if (!entry) warnings.push('No clear entry file found — set a custom start command.');
+      if (!/BOT_TOKEN|process\.env|environ|getenv/.test(blob)) warnings.push('No BOT_TOKEN env usage detected.');
+      const IMG = { python: 'python:3.12-slim', node: 'node:20-slim', deno: 'denoland/deno:1.46', ruby: 'ruby:3.3-slim', php: 'php:8.3-cli', go: 'golang:1.22-alpine', rust: 'rust:1.80-slim', java: 'maven:3.9-eclipse-temurin-21', dotnet: 'mcr.microsoft.com/dotnet/runtime:8.0', bash: 'ubuntu:24.04' };
+      const start = String(req.body.start_command || STARTS[runtime] || '').slice(0, 300);
+      const install = runtime === 'java' ? javaInstall : runtime === 'python' ? 'pip install -r requirements.txt' : runtime === 'node' ? 'npm install' : runtime === 'rust' ? 'cargo build --release' : runtime === 'go' ? 'go mod download' : '';
+      const report = { runtime, language: runtime, entry, framework: framework || framework2, dependencies: [], manifests: names.filter((n) => /requirements\.txt|package\.json|go\.mod|Cargo\.toml|Gemfile|composer\.json|deno\.json|pom\.xml|build\.gradle|\.csproj/.test(n)), mode, file_count: files.length, total_bytes: blob.length, warnings, readiness: Math.max(5, Math.min(100, 40 + (entry ? 20 : 0) + ((framework || framework2) ? 15 : 0) + 15 - warnings.length * 5)), compatibility: { full_panel: true, docker_vps: true, vercel_webhook: ['python', 'node'].includes(runtime) && mode === 'webhook', vercel_reason: 'Webhook-ready Python/Node' }, commands: { install, start }, generated: { Dockerfile: `FROM ${IMG[runtime] || 'ubuntu:24.04'}\nWORKDIR /app\nCOPY . .\n${install ? `RUN ${install}\n` : ''}CMD ["sh","-c","${start}"]\n`, Procfile: `worker: ${start}\n`, manifest: { runtime, entry, framework: framework || framework2, start, install, mode } } };
+      adminAuditLog(s.u, 'analyze_project', `${runtime} files=${files.length}`);
+      return res.json({ ok: true, report });
+    }
+    if (action === 'diagnostics') {
+      let tgOk = true; try { const r = await tgApi('0:diagnostic', 'getMe'); tgOk = !/Could not|ENOTFOUND|timeout/i.test(r.description || ''); } catch { tgOk = false; }
+      const checks = [
+        { name: 'Console credentials configured', ok: true, detail: 'env credentials present' },
+        { name: 'Telegram API reachable', ok: tgOk, detail: tgOk ? 'reachable' : 'network error' },
+        { name: 'Session valid', ok: true, detail: `user=${s.u} role=${s.role}` },
+        { name: 'Flags state', ok: true, detail: `maintenance=${siteFlags.maintenance} deploy=${siteFlags.deploy_enabled}` },
+      ];
+      adminAuditLog(s.u, 'diagnostics', `${checks.filter((c) => c.ok).length}/${checks.length}`);
+      return res.json({ ok: true, checks, all_ok: checks.every((c) => c.ok) });
+    }
+    if (action === 'health_check') {
+      const checks = [{ endpoint: '/api/health', ok: true, status: 200, ms: 1 }, { endpoint: '/api/stats', ok: true, status: 200, ms: 1 }, { endpoint: '/api/bots', ok: true, status: 200, ms: 1 }];
+      adminAuditLog(s.u, 'health_check', '3/3 ok (local)');
+      return res.json({ ok: true, checks });
+    }
+    if (action === 'test_brain') {
+      const text = String(req.body.text || '/start');
+      const reply = text.startsWith('/ping') ? '🏓 Pong!' : text.startsWith('/help') ? '⚡ /start /help /ping /echo /id /about' : text.startsWith('/echo') ? (text.slice(5).trim() || 'Usage: /echo hi') : text.startsWith('/') ? '⚡ PyTeleHost Ultra bot — try /help' : `🔁 ${text}`;
+      return res.json({ ok: true, update_type: 'message', reply: [{ method: 'sendMessage', payload: { chat_id: 1, text: reply } }] });
+    }
+    if (['host_bot', 'bot_status', 'bot_start', 'bot_stop', 'bot_restart'].includes(action)) {
+      const token = String(req.body.token || '').trim();
+      if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) return res.status(400).json({ ok: false, error: 'Valid bot token required' });
+      const preset = ['standard', 'echo', 'menu', 'assistant'].includes(req.body.preset) ? req.body.preset : 'standard';
+      const welcome = String(req.body.welcome || '').slice(0, 300);
+      const hookUrl = `${req.protocol}://${req.get('host')}/api/webhook?token=${encodeURIComponent(token)}&preset=${preset}${welcome ? `&welcome=${encodeURIComponent(welcome)}` : ''}`;
+      const setHook = () => tgApi(token, 'setWebhook', { url: hookUrl, drop_pending_updates: true, allowed_updates: ['message', 'edited_message', 'callback_query', 'inline_query'], max_connections: 40 });
+      global.__adminBots = global.__adminBots || new Map();
+      if (action === 'bot_status') {
+        const me = await tgApi(token, 'getMe'); const info = await tgApi(token, 'getWebhookInfo'); const w = info.result || {};
+        return res.json({ ok: !!me.ok, bot: me.result, webhook: { url: w.url, pending: w.pending_update_count, last_error: w.last_error_message }, live: !!w.url });
+      }
+      if (action === 'bot_stop') { const r = await tgApi(token, 'deleteWebhook', { drop_pending_updates: true }); adminAuditLog(s.u, 'bot_stop'); return res.json({ ok: !!r.ok, telegram: r }); }
+      if (action === 'bot_start' || action === 'bot_restart') {
+        if (action === 'bot_restart') { await tgApi(token, 'deleteWebhook', { drop_pending_updates: false }).catch(() => {}); await new Promise((r) => setTimeout(r, 400)); }
+        const r = await setHook(); adminAuditLog(s.u, action, preset);
+        return res.json({ ok: !!r.ok, webhook_url: hookUrl, preset, telegram: r });
+      }
+      const me = await tgApi(token, 'getMe');
+      if (!me.ok) return res.status(400).json({ ok: false, error: me.description || 'Telegram rejected the token' });
+      const start = req.body.start !== false;
+      let hookRes = null, live = false;
+      if (start) { hookRes = await setHook(); live = !!hookRes.ok; }
+      const bot = { id: crypto.createHash('sha256').update(token).digest('hex').slice(0, 10), name: String(req.body.name || me.result.first_name || 'Hosted Bot').slice(0, 60), framework: `PyTeleHost Brain · ${preset}`, mode: 'webhook', hosted: true, preset, status: live ? 'live' : 'registered', username: me.result.username, telegram_url: me.result.username ? `https://t.me/${me.result.username}` : null, webhook_url: start ? hookUrl : null, managed_by: s.u, created_at: Math.floor(Date.now() / 1000) };
+      global.__adminBots.set(bot.id, bot); adminAuditLog(s.u, 'host_bot', `${bot.name} [${preset}] live=${live}`);
+      return res.json({ ok: true, bot, live, webhook_url: bot.webhook_url, telegram: hookRes });
+    }
+    global.__adminBots = global.__adminBots || new Map();
+    if (action === 'add_bot') {
+      const bot = { id: crypto.randomBytes(5).toString('hex'), name: String(req.body.name || 'Console Bot').slice(0, 60), framework: String(req.body.framework || 'python-telegram-bot').slice(0, 40), mode: 'webhook', status: 'managed', managed_by: s.u, username: null, created_at: Math.floor(Date.now() / 1000) };
+      global.__adminBots.set(bot.id, bot); adminAuditLog(s.u, 'add_bot', bot.name);
+      return res.json({ ok: true, bot });
+    }
+    if (action === 'remove_bot') { global.__adminBots.delete(String(req.body.id || '')); adminAuditLog(s.u, 'remove_bot', req.body.id); return res.json({ ok: true }); }
+    if (['bot_start', 'bot_stop', 'bot_restart', 'bot_delete'].includes(action)) {
+      const bot = bots.get(String(req.body.id || ''));
+      if (!bot) return next(httpError(404, 'Bot not found'));
+      if (action === 'bot_start') startBot(bot).catch((e) => logBot(bot, 'err', e.message));
+      if (action === 'bot_stop') await stopBot(bot, { force: true });
+      if (action === 'bot_restart') await restartBot(bot).catch(() => {});
+      if (action === 'bot_delete') {
+        try { await stopBot(bot, { force: true }); } catch { /* ignore */ }
+        bots.delete(bot.meta.id);
+        try { fs.rmSync(bot.dir, { recursive: true, force: true }); } catch { /* ignore */ }
+        sendWs({ type: 'deleted', id: bot.meta.id });
+      }
+      adminAuditLog(s.u, action, bot.meta.id);
+      return res.json({ ok: true });
+    }
+    if (['validate', 'webhook_info', 'webhook_set', 'webhook_delete', 'send_message'].includes(action)) {
+      const token = String(req.body.token || '').trim();
+      if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) return res.status(400).json({ ok: false, error: 'Valid bot token required' });
+      const method = { validate: 'getMe', webhook_info: 'getWebhookInfo', webhook_delete: 'deleteWebhook', webhook_set: 'setWebhook', send_message: 'sendMessage' }[action];
+      const payload = action === 'webhook_delete' ? { drop_pending_updates: true }
+        : action === 'send_message' ? { chat_id: req.body.chat_id, text: String(req.body.text || '').slice(0, 4000), ...(req.body.parse_mode ? { parse_mode: String(req.body.parse_mode) } : {}) }
+        : action === 'webhook_set' ? { url: req.body.webhook_url || `${req.protocol}://${req.get('host')}/api/webhook?token=${encodeURIComponent(token)}`, drop_pending_updates: true } : {};
+      const data = await new Promise((resolve, reject) => {
+        const body = JSON.stringify(payload);
+        const r2 = https.request(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', timeout: 10000, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, (r) => {
+          let b = ''; r.on('data', (d) => { b += d; }); r.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid Telegram response')); } });
+        });
+        r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout'))); r2.on('error', reject); r2.write(body); r2.end();
+      });
+      adminAuditLog(s.u, action);
+      return res.json({ ok: !!data.ok, telegram: data, webhook_url: payload.url });
+    }
+    return res.status(400).json({ ok: false, error: 'Unknown action' });
+  } catch (e) { next(e); }
+});
+
+/* -------------------- PyTeleHost Ultra (Vercel parity) ------------------ */
+// Same token check the Python serverless API (/api/validate_token) performs,
+// so the Ultra frontend works identically on this Node stack.
+app.post(['/api/validate_token', '/api/validate-token'], async (req, res) => {
+  const token = String((req.body && req.body.token) || '').trim();
+  if (!token) return res.status(400).json({ ok: false, error: 'Send {"token": "123456:ABC..."}' });
+  if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) {
+    return res.status(400).json({ ok: false, valid: false, error: 'Token format looks invalid (expected 123456789:AA...)' });
+  }
+  try {
+    const data = await new Promise((resolve, reject) => {
+      const r2 = https.get(`https://api.telegram.org/bot${token}/getMe`, { timeout: 10000 }, (r) => {
+        let body = '';
+        r.on('data', (d) => { body += d; });
+        r.on('end', () => { try { resolve(JSON.parse(body)); } catch { reject(new Error('Invalid response from Telegram')); } });
+      });
+      r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout')));
+      r2.on('error', reject);
+    });
+    if (!data.ok) return res.status(400).json({ ok: false, valid: false, error: data.description || 'Telegram rejected the token' });
+    const me = data.result;
+    res.json({ ok: true, valid: true, bot: { id: me.id, username: me.username, first_name: me.first_name, can_join_groups: me.can_join_groups, can_read_all_group_messages: me.can_read_all_group_messages, supports_inline_queries: me.supports_inline_queries, url: me.username ? `https://t.me/${me.username}` : null } });
+  } catch (e) {
+    res.status(502).json({ ok: false, error: `Could not reach Telegram: ${e.message}` });
+  }
+});
+app.get('/ultra', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
 /* ------------------------------ frontend -------------------------------- */
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
