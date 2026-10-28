@@ -102,6 +102,34 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 .xp-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
 @media(max-width:960px){.xp-2col{grid-template-columns:1fr}.xp-shell{grid-template-columns:1fr}.xp-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}.xp-side-foot{display:flex;gap:8px;margin:0}.xp-side-foot .btn{width:auto!important;margin:0!important}.xp-user{padding:0}}
 .xp-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+/* ===== Console v6 Ultra theme ===== */
+#xPanel{--acc:#4ea1ff;--acc2:#a06bff;background:radial-gradient(1000px 500px at 85% -10%,#16265e55,transparent),radial-gradient(800px 500px at -10% 110%,#3b157a44,transparent),#04060f}
+#xPanel[data-accent="violet"]{--acc:#a06bff;--acc2:#ff6bc1}
+#xPanel[data-accent="green"]{--acc:#2fe6a8;--acc2:#4ea1ff}
+#xPanel[data-accent="orange"]{--acc:#ff9f43;--acc2:#ff5e7a}
+#xPanel ::-webkit-scrollbar{width:9px;height:9px}#xPanel ::-webkit-scrollbar-thumb{background:#1d2c52;border-radius:99px}#xPanel ::-webkit-scrollbar-track{background:transparent}
+.xp-side{background:linear-gradient(180deg,#0a1130f2,#060a1df2);backdrop-filter:blur(14px);border-right:1px solid #22336b}
+.xp-brand span{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent;font-size:17px;letter-spacing:.2px}
+.xp-nav{position:relative;transition:all .18s ease;border-radius:12px}
+.xp-nav:hover{transform:translateX(3px);background:#101d42}
+.xp-nav.on{background:linear-gradient(90deg,#14295e,#101d42);border-color:var(--acc);box-shadow:0 0 0 1px var(--acc),0 6px 22px -8px var(--acc)}
+.xp-nav.on::before{content:'';position:absolute;left:-14px;top:20%;height:60%;width:3px;border-radius:9px;background:linear-gradient(180deg,var(--acc),var(--acc2))}
+.xp-topbar{position:sticky;top:0;z-index:6;background:#050914d9;backdrop-filter:blur(14px);padding:12px 4px;border-bottom:1px solid #1b2a55}
+.xp-main .card{background:linear-gradient(180deg,#0a1230e6,#070d22e6);border:1px solid #22336b;box-shadow:0 14px 34px -18px #000;transition:transform .18s ease,border-color .18s ease}
+.xp-main .card:hover{transform:translateY(-2px);border-color:var(--acc)}
+.xp-main .stat{background:linear-gradient(160deg,#0d1739,#080f28);border:1px solid #22336b;position:relative;overflow:hidden}
+.xp-main .stat::after{content:'';position:absolute;inset:auto -20% -55% -20%;height:70%;background:radial-gradient(closest-side,var(--acc),transparent);opacity:.16}
+.xp-main .btn{transition:all .15s ease}.xp-main .btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px -10px var(--acc)}
+.xp-main input,.xp-main select,.xp-main textarea{transition:border-color .15s ease, box-shadow .15s ease}
+.xp-main input:focus,.xp-main select:focus,.xp-main textarea:focus{border-color:var(--acc);box-shadow:0 0 0 3px color-mix(in srgb,var(--acc) 25%, transparent);outline:none}
+.xp-main table.bots-t tr{transition:background .15s}.xp-main table.bots-t tbody tr:hover{background:#0e1a3d}
+.langcard{transition:transform .18s ease,border-color .18s ease}.langcard:hover{transform:translateY(-3px) scale(1.02);border-color:var(--acc)!important}
+#xPanel.compact .xp-main .card{padding:13px}#xPanel.compact .xp-nav{padding:8px 11px}#xPanel.compact .xp-main{padding:14px}
+.xclock{font-family:ui-monospace,monospace;font-size:12.5px;color:var(--mut);white-space:nowrap}
+select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
+.deploy-matrix{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}@media(max-width:800px){.deploy-matrix{grid-template-columns:1fr}}
+.dm-cell{border:1px solid #22336b;border-radius:13px;padding:12px;background:#060c20}
+.sec-high{color:#ff7a7a}.sec-medium{color:#ffc857}.sec-low{color:#8fd0ff}
 .chart{width:100%;height:180px;display:block;margin-top:12px}.chart.tall{height:230px}
 .bar{background:#14224a;border-radius:99px;height:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio));border-radius:99px}
 .audit-feed{font-size:13px;color:var(--mut);line-height:1.7;max-height:300px;overflow:auto}
@@ -307,7 +335,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v5 · keys 1-8 switch tabs</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v6 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
       <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
@@ -328,6 +356,10 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
         <input id="xSearch" placeholder="🔎 Search bots, actions…  (Ctrl+K for palette)">
         <span class="tag live" id="xLiveTag">● LIVE SYNC</span>
         <span style="color:var(--mut);font-size:12px" id="xUpdated"></span>
+        <span class="xclock" id="xClock"></span>
+        <select id="xAccent" class="xmini" title="Console accent theme"><option value="blue">🎨 Blue</option><option value="violet">🎨 Violet</option><option value="green">🎨 Mint</option><option value="orange">🎨 Sunset</option></select>
+        <button class="btn small ghost" id="xDensity" title="Toggle compact density">🗜️</button>
+        <button class="btn small ghost" id="xShortcutsBtn" title="Keyboard shortcuts">?</button>
       </div>
 
       <div data-xpane="overview">
@@ -431,12 +463,15 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
               <select id="xcSample" style="width:auto"><option value="">✨ Load sample…</option><option value="python">🐍 Python (PTB)</option><option value="node">🟢 Node (Telegraf)</option><option value="java">☕ Java (TelegramBots)</option><option value="go">🔵 Go</option><option value="rust">🦀 Rust (Teloxide)</option><option value="dotnet">🟣 C# / .NET</option><option value="php">🐘 PHP</option><option value="ruby">💎 Ruby</option><option value="bash">🐚 Bash</option></select>
             </div>
             <div id="xcDrop" class="dropzone">⬇️ Drag &amp; drop bot files here — .py .js .go .rb .php .java .rs .sh … any language</div>
+            <div class="flex mt"><input id="xcGhUrl" placeholder="🐙 GitHub repo — https://github.com/user/telegram-bot" style="flex:1"><button class="btn small ghost" id="xcGhBtn">⬇️ Import Repo</button></div>
+            <div id="xcGhOut" style="font-size:12.5px;color:var(--mut);margin-top:6px">Import a public GitHub repo straight into the editor (code files only, up to 40).</div>
             <div id="xcFileList" class="filelist"></div>
             <div class="flex mt"><input id="xcNewPath" placeholder="new file e.g. helpers/util.py" style="flex:1"><button class="btn small" id="xcAddFile">➕ Add File</button>
             <button class="btn small danger" id="xcDelFile">🗑 Delete Selected</button></div>
             <label>Active file: <span id="xcActiveName" style="color:#fff">—</span></label>
             <textarea class="code" id="xcEditor" spellcheck="false" placeholder="// paste your bot code here, or add files above"></textarea>
             <label>Environment (.env — BOT_TOKEN goes here)</label><textarea id="xcEnv" rows="2" placeholder="BOT_TOKEN="></textarea>
+            <div class="flex mt"><button class="btn small ghost" id="xcEnvCheck">🩺 Check .env</button><span id="xcEnvOut" style="font-size:12.5px;color:var(--mut)"></span></div>
             <label>Custom start command (blank = auto-detect)</label><input id="xcStart" placeholder="python bot.py">
             <div class="flex mt"><button class="btn" id="xcAnalyze">🔍 Analyze Project</button><button class="btn ghost" id="xcSaveProj">💾 Save Project</button></div>
           </div>
@@ -447,11 +482,13 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
                 <pre class="json" id="xcGenPre" style="max-height:240px;overflow:auto;margin-top:8px"></pre>
                 <button class="btn small ghost mt" id="xcGenCopy">📋 Copy File</button>
               </div>
+              <div id="xcMatrix" class="mt"></div>
             </div>
             <div class="card mt"><b style="color:#fff">🖥️ Panel Manager</b> <span style="color:var(--mut);font-size:12.5px">— live control of process-hosted bots (any language)</span>
               <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Connect to your Full Panel (URL in Host This Project) to see every hosted bot process and start / stop / restart / inspect logs without leaving this console.</p>
               <div class="flex mt"><button class="btn small" id="xcPanelLoad">🔌 Load Panel Bots</button><label class="chk"><input type="checkbox" id="xcPanelAuto"> Auto-refresh 8s</label></div>
               <div id="xcPanelBots" class="mt" style="font-size:13.5px;color:var(--mut)">Not connected yet.</div>
+              <div class="flex mt"><button class="btn small ghost" onclick="xcPanelBulk('start')">▶ Start selected</button><button class="btn small ghost" onclick="xcPanelBulk('stop')">⏹ Stop selected</button><button class="btn small ghost" onclick="xcPanelBulk('restart')">↻ Restart selected</button><label class="chk"><input type="checkbox" id="xcLogTail"> 📜 Tail logs (3s)</label></div>
               <pre class="json mt hide" id="xcPanelLogs" style="max-height:260px;overflow:auto"></pre>
               <b style="color:#fff;display:block;margin-top:14px">🧾 Deploy History</b>
               <div id="xcHistory" class="mt" style="font-size:13px;color:var(--mut);line-height:1.8">No deployments yet this browser.</div>
@@ -566,6 +603,14 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
   </div>
 </div>
 
+<div id="xShortcuts" class="modal hide"><div class="box" style="width:520px">
+  <h3>⌨️ Keyboard Shortcuts</h3>
+  <div style="line-height:2;font-size:14px;color:var(--mut)">
+  <span class="kbd">1</span>–<span class="kbd">8</span> switch tabs · <span class="kbd">Ctrl/⌘ K</span> command palette · <span class="kbd">Ctrl/⌘ S</span> save site (Site tab) · <span class="kbd">?</span> this help · <span class="kbd">Esc</span> close dialogs<br>
+  Tabs: 1 Overview · 2 Bot Manager · 3 Bot Hosting · 4 Code Hosting · 5 Telegram Lab · 6 Analytics · 7 Site Builder · 8 System
+  </div>
+  <button type="button" class="btn ghost mt" style="width:100%;justify-content:center" onclick="document.getElementById('xShortcuts').classList.add('hide')">Close</button>
+</div></div>
 <div id="xPalette" class="modal hide"><div class="box" style="width:560px">
   <h3>⌘ Command Palette</h3><input id="xPalInput" placeholder="Type a command… (bots, health, maintenance, export, logout)">
   <div id="xPalList" class="mt" style="max-height:320px;overflow:auto"></div>
@@ -1135,7 +1180,7 @@ window.xcRenderGen=()=>{
   if(g.Procfile)xcGenFiles['Procfile']=g.Procfile;
   xcGenFiles['pytelehost.json']=JSON.stringify(g.manifest||xcReport,null,2);
   try{const dep=projectPackageFiles().find(f=>f.path==='DEPLOY.md'); if(dep)xcGenFiles['DEPLOY.md']=dep.content}catch(e){}
-  xcGenCur='Dockerfile'; $('#xcGenWrap').classList.remove('hide'); xcGenShow();
+  xcGenCur='Dockerfile'; $('#xcGenWrap').classList.remove('hide'); xcGenShow(); xcRenderMatrix();
 };
 $('#xcGenCopy').onclick=()=>{const t=$('#xcGenPre').textContent; if(navigator.clipboard)navigator.clipboard.writeText(t); toast('📋 Copied '+xcGenCur)};
 /* deploy history */
@@ -1157,13 +1202,14 @@ window.xcPanelLoad=async()=>{
   try{
     const r=await fetch(base+'/api/bots',{headers:xcPanelHeaders()}); const d=await r.json();
     const bots=d.bots||[];
-    el.innerHTML=bots.length?'<div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Language</th><th>Status</th><th>PID</th><th>Uptime</th><th></th></tr></thead><tbody>'+bots.map(b=>'<tr><td><b style="color:#fff">'+esc(b.name||b.id)+'</b></td><td><span class="tag">'+esc(b.runtimeLabel||b.runtime||'-')+'</span></td><td><span class="hstat '+((b.status==='running'||b.status==='live')?'live':'off')+'">'+esc(b.status||'-')+'</span></td><td>'+(b.pid||'-')+'</td><td>'+xcFmtUp(b.uptimeMs)+'</td><td><div class="hact"><button class="btn small" onclick="xcPanelAct(\''+b.id+'\',\'start\')">▶</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'stop\')">⏹</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'restart\')">↻</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'logs\')">📜</button><button class="btn small danger" onclick="xcPanelAct(\''+b.id+'\',\'delete\')">🗑</button></div></td></tr>').join('')+'</tbody></table></div>':'Panel connected — no bots hosted yet. Deploy one above! 🚀';
+    el.innerHTML=bots.length?'<div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Language</th><th>Status</th><th>PID</th><th>Uptime</th><th></th></tr></thead><tbody>'+bots.map(b=>'<tr><td><input type="checkbox" class="xcPanelSel" value="'+b.id+'"> <b style="color:#fff">'+esc(b.name||b.id)+'</b></td><td><span class="tag">'+esc(b.runtimeLabel||b.runtime||'-')+'</span></td><td><span class="hstat '+((b.status==='running'||b.status==='live')?'live':'off')+'">'+esc(b.status||'-')+'</span></td><td>'+(b.pid||'-')+'</td><td>'+xcFmtUp(b.uptimeMs)+'</td><td><div class="hact"><button class="btn small" onclick="xcPanelAct(\''+b.id+'\',\'start\')">▶</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'stop\')">⏹</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'restart\')">↻</button><button class="btn small ghost" onclick="xcPanelAct(\''+b.id+'\',\'logs\')">📜</button><button class="btn small danger" onclick="xcPanelAct(\''+b.id+'\',\'delete\')">🗑</button></div></td></tr>').join('')+'</tbody></table></div>':'Panel connected — no bots hosted yet. Deploy one above! 🚀';
   }catch(e){el.textContent='❌ Could not reach panel: '+e.message}
 };
 window.xcPanelAct=async(id,act)=>{
   const base=xcPanelBase(); const logsEl=$('#xcPanelLogs');
   try{
     if(act==='logs'){
+      xcLastLogId=id;
       const r=await fetch(base+'/api/bots/'+id+'/logs?limit=200',{headers:xcPanelHeaders()}); const d=await r.json();
       const lines=(d.logs||[]).map(l=>typeof l==='string'?l:('['+(l.s||l.stream||l.type||'log')+'] '+(l.m||l.text||l.message||JSON.stringify(l))));
       logsEl.classList.remove('hide'); logsEl.textContent=lines.join('\n')||'(no logs yet)'; logsEl.scrollTop=logsEl.scrollHeight; return;
@@ -1178,6 +1224,65 @@ window.xcPanelAct=async(id,act)=>{
 $('#xcPanelLoad').onclick=()=>xcPanelLoad();
 let xcPanelTimer=null;
 $('#xcPanelAuto').addEventListener('change',e=>{clearInterval(xcPanelTimer); if(e.target.checked){xcPanelLoad(); xcPanelTimer=setInterval(xcPanelLoad,8000)} toast(e.target.checked?'🔄 Panel auto-refresh on':'⏸ Panel auto-refresh off')});
+/* ================= console v6 ultra ================= */
+const xClockEl=$('#xClock'); setInterval(()=>{if(xClockEl&&!$('#xPanel').classList.contains('hide'))xClockEl.textContent='🕐 '+new Date().toLocaleTimeString()},1000);
+const accSel=$('#xAccent'); try{const a=localStorage.getItem('x_accent'); if(a&&accSel){$('#xPanel').dataset.accent=a; accSel.value=a}}catch(e){}
+if(accSel)accSel.addEventListener('change',e=>{$('#xPanel').dataset.accent=e.target.value; try{localStorage.setItem('x_accent',e.target.value)}catch(err){} toast('🎨 Accent theme: '+e.target.value)});
+$('#xDensity').onclick=()=>{$('#xPanel').classList.toggle('compact'); toast('🗜️ Density '+( $('#xPanel').classList.contains('compact')?'compact':'comfortable'))};
+$('#xShortcutsBtn').onclick=()=>$('#xShortcuts').classList.remove('hide');
+$('#xShortcuts').addEventListener('click',e=>{if(e.target.id==='xShortcuts')e.target.classList.add('hide')});
+document.addEventListener('keydown',e=>{const t=(document.activeElement||{}).tagName||''; if(e.key==='?'&&!/INPUT|TEXTAREA|SELECT/.test(t)&&!$('#xPanel').classList.contains('hide'))$('#xShortcuts').classList.remove('hide')});
+/* GitHub import */
+window.xcGithubImport=async()=>{
+  const out=$('#xcGhOut'); const v=($('#xcGhUrl').value||'').trim().replace(/\.git$/,'');
+  const m=v.match(/github\.com\/([\w.-]+)\/([\w.-]+)/)||v.match(/^([\w.-]+)\/([\w.-]+)$/);
+  if(!m){out.textContent='Paste a repo like https://github.com/user/telegram-bot';return}
+  const owner=m[1],repo=m[2]; out.textContent='⏳ Fetching '+owner+'/'+repo+' …';
+  try{
+    const ri=await fetch('https://api.github.com/repos/'+owner+'/'+repo); if(!ri.ok)throw new Error('repo not found or private (HTTP '+ri.status+')');
+    const info=await ri.json(); const br=info.default_branch||'main';
+    const tr=await fetch('https://api.github.com/repos/'+owner+'/'+repo+'/git/trees/'+br+'?recursive=1'); if(!tr.ok)throw new Error('tree fetch HTTP '+tr.status);
+    const tree=await tr.json();
+    const exts=/\.(py|js|mjs|cjs|ts|go|rb|php|java|rs|cs|sh|pl|lua|dart|ex|exs|json|toml|txt|md|xml|gradle|mod|sum|yaml|yml)$/i;
+    const files=(tree.tree||[]).filter(x=>x.type==='blob'&&exts.test(x.path)&&(x.size||0)<300000&&!/node_modules\//.test(x.path)).slice(0,40);
+    if(!files.length){out.textContent='No importable code files found in that repo.';return}
+    let added=0;
+    for(const f of files){ try{ const r=await fetch('https://raw.githubusercontent.com/'+owner+'/'+repo+'/'+br+'/'+f.path); if(!r.ok)continue; const t=await r.text(); if(t.includes('\u0000'))continue; xcUpsert(f.path,t); added++ }catch(e){} }
+    xcRenderFiles(); out.textContent='✅ Imported '+added+' file(s) from '+owner+'/'+repo+'@'+br+' — press 🔍 Analyze Project.';
+    toast('🐙 GitHub import done: '+added+' files');
+  }catch(e){out.textContent='❌ Import failed: '+e.message}
+};
+$('#xcGhBtn').onclick=()=>xcGithubImport();
+/* env doctor */
+window.xcEnvCheck=()=>{
+  const out=$('#xcEnvOut'); const lines=($('#xcEnv').value||'').split('\n').filter(l=>l.trim()&&!l.trim().startsWith('#'));
+  const issues=[]; const keys=new Set(); let hasTok=false;
+  for(const l of lines){ const i=l.indexOf('='); if(i<1){issues.push('bad line “'+l.slice(0,20)+'”');continue} const k=l.slice(0,i).trim(),v=l.slice(i+1).trim();
+    if(!/^[A-Za-z_][A-Za-z0-9_]*$/.test(k))issues.push('invalid key '+k); if(keys.has(k))issues.push('duplicate '+k); keys.add(k);
+    if(k==='BOT_TOKEN'){hasTok=true; if(!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(v))issues.push('BOT_TOKEN format looks wrong')}
+    if(!v)issues.push(k+' is empty') }
+  out.innerHTML=(issues.length?'⚠️ '+issues.map(x=>esc(x)).join(' · '):'✅ .env looks good')+' · '+keys.size+' var(s)'+(hasTok?' · BOT_TOKEN present':' · ⚠️ no BOT_TOKEN');
+};
+$('#xcEnvCheck').onclick=()=>xcEnvCheck();
+/* deploy matrix */
+window.xcRenderMatrix=()=>{
+  const el=$('#xcMatrix'); if(!el)return;
+  if(!xcReport){el.innerHTML='';return}
+  const r=xcReport, vw=r.compatibility&&r.compatibility.vercel_webhook;
+  el.innerHTML='<b style="color:#fff">🎯 Deploy Matrix</b><div class="deploy-matrix" style="margin-top:9px">'
+  +'<div class="dm-cell"><b style="color:#fff">⚡ Vercel Webhook</b><div style="font-size:12.5px;color:var(--mut);margin:6px 0">'+(vw?'✅ Ready — serverless 24/7':'⚠️ Needs webhook-style Python/Node')+'</div><button class="btn small '+(vw?'':'ghost')+'" onclick="document.getElementById(\'xcWrapper\').click()">Add Wrapper</button></div>'
+  +'<div class="dm-cell"><b style="color:#fff">🖥️ Full Panel</b><div style="font-size:12.5px;color:var(--mut);margin:6px 0">✅ Ready — any language, real process 24/7</div><button class="btn small" onclick="document.getElementById(\'xcDeployPanel\').click()">Deploy Now</button></div>'
+  +'<div class="dm-cell"><b style="color:#fff">🐳 Docker / VPS</b><div style="font-size:12.5px;color:var(--mut);margin:6px 0">✅ Ready — Dockerfile generated for you</div><button class="btn small ghost" onclick="document.getElementById(\'xcDockerCopy\').click()">Copy Commands</button></div></div>';
+};
+/* panel bulk ops + log tail */
+window.xcPanelBulk=async act=>{
+  const ids=[...document.querySelectorAll('.xcPanelSel:checked')].map(c=>c.value);
+  if(!ids.length){toast('Select panel bots first (checkboxes)');return}
+  toast('⏳ Bulk '+act+': '+ids.length+' bot(s)…');
+  for(const id of ids)await xcPanelAct(id,act);
+};
+let xcTailTimer=null,xcLastLogId=null;
+$('#xcLogTail').addEventListener('change',e=>{clearInterval(xcTailTimer); if(e.target.checked){ if(!xcLastLogId){toast('Open a bot\'s logs first, then enable tail'); e.target.checked=false; return} xcTailTimer=setInterval(()=>xcPanelAct(xcLastLogId,'logs'),3000); toast('📜 Tailing logs every 3s') }});
 
 $('#xcAddFile').onclick=()=>{const p=$('#xcNewPath').value.trim();if(!p){toast('Type a file path first');return}xcUpsert(p,$('#xcEditor').value&&xcActive===p?$('#xcEditor').value:'');xcActive=p;$('#xcActiveName').textContent=p;$('#xcEditor').value=(xcFilesArr.find(f=>f.path===p)||{}).content||'';$('#xcNewPath').value='';xcRenderFiles()};
 $('#xcDelFile').onclick=()=>{if(!xcActive){toast('Select a file first');return}xcFilesArr=xcFilesArr.filter(f=>f.path!==xcActive);xcActive=xcFilesArr[0]?xcFilesArr[0].path:null;$('#xcEditor').value=xcActive?(xcFilesArr[0].content):'';$('#xcActiveName').textContent=xcActive||'—';xcRenderFiles()};
@@ -1200,7 +1305,8 @@ function renderReport(){
   +'<div style="margin-top:8px">🎯 Entry: <span class="kbd">'+esc(r.entry||'not detected')+'</span><br>🏁 Start: <span class="kbd">'+esc(r.commands.start||'—')+'</span>'+(r.commands.install?'<br>📦 Install: <span class="kbd">'+esc(r.commands.install)+'</span>':'')+'</div>'
   +(r.dependencies&&r.dependencies.length?'<div style="margin-top:8px">📚 Dependencies<br>'+r.dependencies.map(d=>'<span class="chip">'+esc(d)+'</span>').join('')+'</div>':'')
   +'<div style="margin-top:8px">✅ Full Panel (any language): <b style="color:var(--grn)">Yes</b> · 🐳 Docker/VPS: <b style="color:var(--grn)">Yes</b> · ⚡ Vercel webhook: <b style="color:'+(r.compatibility.vercel_webhook?'var(--grn)':'#ffc857')+'">'+(r.compatibility.vercel_webhook?'Yes':'Not directly')+'</b><br><span style="font-size:12.3px">'+esc(r.compatibility.vercel_reason||'')+'</span></div>'
-  +(r.warnings&&r.warnings.length?'<div style="margin-top:8px;color:#ffc857">'+r.warnings.map(w=>'⚠ '+esc(w)).join('<br>')+'</div>':'<div style="margin-top:8px;color:var(--grn)">✅ No risks detected</div>');
+  +(r.warnings&&r.warnings.length?'<div style="margin-top:8px;color:#ffc857">'+r.warnings.map(w=>'⚠ '+esc(w)).join('<br>')+'</div>':'<div style="margin-top:8px;color:var(--grn)">✅ No risks detected</div>')
+  +(r.security?'<div style="margin-top:10px">🛡️ Security Doctor — score <b style="color:#fff">'+(r.security_score==null?'-':r.security_score)+'/100</b><div class="meter"><i style="width:'+(r.security_score||0)+'%"></i></div>'+(r.security.length?r.security.map(f=>'<div class="sec-'+f.level+'">'+(f.level==='high'?'🔴':f.level==='medium'?'🟠':'🔵')+' '+esc(f.msg)+'</div>').join(''):'<div style="color:var(--grn)">✅ No security issues found</div>')+'</div>':'');
 }
 /* ---- minimal stored-ZIP writer (no deps) ---- */
 const CRC_TABLE=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
@@ -1293,7 +1399,7 @@ xcUpsert('bot.py', XC_SAMPLES.python['bot.py']); xcUpsert('requirements.txt', XC
 
 /* command palette */
 const PALETTE=[
- ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🗂️ Code Hosting',()=>gotoTab('code')],['⬇️ Deployment ZIP',()=>gotoTab('code')],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
+ ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🗂️ Code Hosting',()=>gotoTab('code')],['⬇️ Deployment ZIP',()=>gotoTab('code')],['🐙 Import from GitHub',()=>{gotoTab('code');setTimeout(()=>{const g=$('#xcGhUrl');if(g)g.focus()},80)}],['🖥️ Load Panel Bots',()=>{gotoTab('code');setTimeout(()=>{if(window.xcPanelLoad)xcPanelLoad()},80)}],['⌨️ Keyboard Shortcuts',()=>$('#xShortcuts').classList.remove('hide')],['🎨 Cycle Accent Theme',()=>{const s2=$('#xAccent');if(!s2)return;const v=['blue','violet','green','orange'];s2.value=v[(v.indexOf(s2.value)+1)%4];s2.dispatchEvent(new Event('change'))}],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
  ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
  ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['🔬 Run Full Diagnostics',()=>{gotoTab('system');runDiagnostics()}],['🚀 Bot Hosting',()=>gotoTab('hosting')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
  ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],

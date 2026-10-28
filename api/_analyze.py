@@ -191,6 +191,29 @@ def _detect(files):
     warnings = []
     if re.search(r"\b\d{6,12}:[A-Za-z0-9_-]{30,}\b", blob):
         warnings.append("A bot-token-looking string is hardcoded in code — move it to BOT_TOKEN env var.")
+    security = []
+    def sec(level, msg):
+        security.append({"level": level, "msg": msg})
+    if re.search(r"\b\d{6,12}:[A-Za-z0-9_-]{30,}\b", blob):
+        sec("high", "Hardcoded bot token in source — rotate it in @BotFather and use the BOT_TOKEN env var.")
+    if re.search(r"\b(eval|exec)\s*\(", blob):
+        sec("high", "eval()/exec() on dynamic code — remote code execution risk if input reaches it.")
+    if re.search(r"os\.system\s*\(|subprocess\.[a-z_]+\([^)]*shell\s*=\s*True|child_process|Runtime\.getRuntime\(\)\.exec", blob):
+        sec("medium", "Shell command execution found — validate/escape any user input used in commands.")
+    if re.search(r"pickle\.loads?\(|marshal\.loads\(|yaml\.load\((?![^)]*Loader)", blob):
+        sec("medium", "Unsafe deserialization (pickle/marshal/yaml.load) — can execute arbitrary code on crafted input.")
+    if re.search(r"verify\s*=\s*False|CURLOPT_SSL_VERIFYPEER[^,)]*0|rejectUnauthorized\s*:\s*false", blob):
+        sec("medium", "TLS certificate verification disabled — vulnerable to man-in-the-middle attacks.")
+    if re.search(r"curl[^|\n]*\|\s*(bash|sh)\b|wget[^|\n]*\|\s*(bash|sh)\b", blob):
+        sec("high", "Pipe-to-shell install pattern (curl | bash) — supply-chain risk.")
+    if re.search(r"0\.0\.0\.0|host\s*=\s*['\"]0\.0\.0\.0", blob):
+        sec("low", "Binding to 0.0.0.0 — fine behind a platform router, risky on a bare VPS without firewall.")
+    if re.search(r"(DEBUG|debug)\s*[:=]\s*(True|true|1)\b", blob):
+        sec("low", "Debug mode appears enabled — disable in production.")
+    if re.search(r"api\.telegram\.org/bot[^/\s'\"]{0,4}['\"]?\s*\+|bot['\"]?\s*\+\s*\w*[Tt]oken", blob):
+        sec("low", "Token concatenated into URLs in code — ensure logs never print full request URLs.")
+    sec_penalty = sum(25 if f["level"] == "high" else 12 if f["level"] == "medium" else 5 for f in security)
+    security_score = max(5, 100 - sec_penalty)
     if "while True" in blob or "while(true)" in blob:
         warnings.append("Busy loop detected (while True) — make sure it sleeps to avoid 100% CPU.")
     if not re.search(r"BOT_TOKEN|TELEGRAM_TOKEN|environ|getenv|process\.env|ENV\[|System\.getenv|os\.getenv", blob):
@@ -267,6 +290,8 @@ def _detect(files):
         "file_count": len(files),
         "total_bytes": sum(len(f.get("content") or "") for f in files),
         "warnings": warnings,
+        "security": security,
+        "security_score": security_score,
         "readiness": max(5, min(100, score)),
         "compatibility": {
             "full_panel": True,
