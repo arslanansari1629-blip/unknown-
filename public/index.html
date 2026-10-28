@@ -152,10 +152,64 @@ select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
 .fileitem:hover{color:#fff}.fileitem.on{background:#10254a;color:#fff}
 .chip{display:inline-block;background:#14224a;color:#9db9ec;border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:700;margin:2px 2px 2px 0}
 .meter{background:#14224a;border-radius:99px;height:10px;overflow:hidden;margin:6px 0 2px}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--grn))}
+
+/* ===== Ultra UI 2.0 — public site ===== */
+::selection{background:#7c5cff;color:#fff}
+body::-webkit-scrollbar{width:10px}body::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--blue2),var(--vio));border-radius:99px}body::-webkit-scrollbar-track{background:#070d20}
+#scrollProgress{position:fixed;top:0;left:0;height:3px;width:100%;z-index:120;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8);transform-origin:0 50%;transform:scaleX(0)}
+nav{transition:box-shadow .25s,background .25s}nav.scrolled{box-shadow:0 12px 34px -12px #000;background:#050914e8}
+.nav-links a{position:relative;padding:4px 0}
+.nav-links a::after{content:'';position:absolute;left:0;bottom:-2px;height:2px;width:0;border-radius:9px;background:linear-gradient(90deg,var(--blue),var(--vio));transition:width .25s}
+.nav-links a:hover::after{width:100%}
+.logo{transition:.2s}.logo:hover{filter:drop-shadow(0 0 14px #2aabee88)}
+.hero h1 .g{background-size:220% 100%;animation:gradShift 7s ease infinite}
+@keyframes gradShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+.hero .pill{box-shadow:0 0 0 1px #2aabee22,0 8px 24px -10px #2aabee66}
+.btn{position:relative;overflow:hidden;background-size:160% 100%}
+.btn::after{content:'';position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(100deg,transparent,#ffffff3d,transparent);transform:skewX(-18deg);transition:left .5s}
+.btn:hover::after{left:120%}
+section h2{position:relative;padding-bottom:14px}
+section h2::after{content:'';position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:74px;height:4px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8)}
+section .card,.tpl,.feat,.price,section details{background:linear-gradient(180deg,#0c1430d9,#080f24d9);border-color:#24366e;box-shadow:0 18px 40px -22px #000}
+section .card{transition:transform .25s,border-color .25s,box-shadow .25s}
+section .card:hover,.tpl:hover,.feat:hover,.price:hover{transform:translateY(-5px);border-color:var(--blue);box-shadow:0 26px 50px -22px #2aabee55}
+.tpl,.feat,.price{position:relative;overflow:hidden}
+.tpl::before,.feat::before,.price::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8);opacity:0;transition:opacity .25s}
+.tpl:hover::before,.feat:hover::before,.price:hover::before{opacity:1}
+.ico{display:inline-block;animation:floaty 5s ease-in-out infinite}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.price.hot{transform:scale(1.03);background:linear-gradient(180deg,#141040,#0a0f2a)}
+.hero .stat{background:linear-gradient(160deg,#0d1739e6,#080f28e6);border-color:#24366e;transition:transform .25s,border-color .25s}
+.hero .stat:hover{transform:translateY(-4px) scale(1.02);border-color:var(--vio)}
+.hero .stat b{background:linear-gradient(90deg,#fff,#9db9ec);-webkit-background-clip:text;background-clip:text;color:transparent}
+input,select,textarea{transition:border-color .2s,box-shadow .2s}
+input:focus,select:focus,textarea:focus{box-shadow:0 0 0 3px #2aabee2b}
+details{transition:border-color .2s}details:hover{border-color:var(--blue)}details[open ]{border-color:var(--vio)}
+summary::marker{color:var(--blue)}
+#toTop{position:fixed;right:20px;bottom:20px;z-index:110;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:#0d1834;color:#fff;font-size:19px;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(12px);transition:.3s;box-shadow:0 12px 30px -10px #000}
+#toTop.show{opacity:1;pointer-events:auto;transform:none}#toTop:hover{border-color:var(--blue);background:#14295e}
+.lang-strip{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:26px auto 0;max-width:900px}
+.lang-strip span{border:1px solid #24366e;background:#0a1230b8;border-radius:99px;padding:7px 14px;font-size:13px;color:var(--mut);transition:.2s}
+.lang-strip span:hover{color:#fff;border-color:var(--vio);transform:translateY(-2px)}
+.lang-strip b{color:#fff}
+.rv{opacity:0;transform:translateY(22px);transition:opacity .6s ease,transform .6s ease}
+.rv.in{opacity:1;transform:none}
+@media(prefers-reduced-motion:reduce){.rv{opacity:1;transform:none;transition:none}.ico,.hero h1 .g{animation:none}}
+footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px solid #24366e}
+/* ===== Console v7 ===== */
+.xp-group{font-size:10.5px;letter-spacing:1.6px;color:#5f7195;font-weight:800;padding:14px 10px 5px;text-transform:uppercase}
+.xbdg{float:right;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#fff;font-size:10.5px;border-radius:99px;padding:2px 8px;font-weight:800}
+#xCrumb{font-size:13px;color:var(--mut);white-space:nowrap}#xCrumb b{color:#fff}
+#xGate .box{background:linear-gradient(180deg,#0d1739,#080f28);border:1px solid var(--acc,#2aabee);box-shadow:0 30px 80px -20px #2aabee55;border-radius:22px;position:relative;overflow:hidden}
+#xGate .box::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8)}
+#xGate .box h3{font-size:23px;background:linear-gradient(90deg,#fff,#9db9ec);-webkit-background-clip:text;background-clip:text;color:transparent}
+.xp-user small{letter-spacing:.3px}
+
 </style>
 </head>
 <body>
 <div class="blob b1"></div><div class="blob b2"></div><div class="grid-bg"></div>
+<div id="scrollProgress"></div>
 <div id="siteBanner" class="hide"></div>
 
 <nav><div class="wrap nav-in">
@@ -174,6 +228,9 @@ select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
   <div class="flex" style="justify-content:center">
     <a class="btn" href="#deploy">🚀 Deploy My Bot</a>
     <a class="btn ghost" href="#templates">📚 View Templates</a>
+  </div>
+  <div class="lang-strip" aria-label="Supported languages">
+    <span>🐍 <b>Python</b></span><span>🟢 <b>Node.js</b></span><span>☕ <b>Java</b></span><span>🔵 <b>Go</b></span><span>🦀 <b>Rust</b></span><span>🟣 <b>C#</b></span><span>🐘 <b>PHP</b></span><span>💎 <b>Ruby</b></span><span>🐚 <b>Bash</b></span><span style="border-color:var(--vio);color:#fff">🌍 Multi-language code hosting included</span>
   </div>
   <div class="stats">
     <div class="stat"><b data-count="12847">0</b><s>Bots hosted</s></div>
@@ -313,6 +370,7 @@ select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
   Python serverless on Vercel · Full polling panel in this repo (<span class="kbd">server.js</span>) · MIT Licensed
 </footer>
 
+<button id="toTop" title="Back to top" aria-label="Back to top">↑</button>
 <div class="toast" id="toast"></div>
 
 <!-- restricted console: intentionally not linked or referenced anywhere in the UI -->
@@ -335,13 +393,18 @@ select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v6 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v7 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
+      <div class="xp-group">Overview</div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
-      <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
+      <div class="xp-group">Hosting</div>
+      <button class="xp-nav" data-xtab="bots">🤖 Bot Manager <span class="xbdg hide" id="xNavBots">0</span></button>
       <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
-      <button class="xp-nav" data-xtab="code">🗂️ Code Hosting</button>
+      <button class="xp-nav" data-xtab="code">🗂️ Code Hosting <span class="xbdg hide" id="xNavProj">0</span></button>
+      <div class="xp-group">Labs</div>
       <button class="xp-nav" data-xtab="telegram">✈️ Telegram Lab</button>
+      <div class="xp-group">Insights</div>
       <button class="xp-nav" data-xtab="analytics">📈 Analytics</button>
+      <div class="xp-group">Platform</div>
       <button class="xp-nav" data-xtab="site">🎛️ Site Builder</button>
       <button class="xp-nav" data-xtab="system">⚙️ System</button>
       <div class="xp-side-foot">
@@ -353,6 +416,7 @@ select.xmini,input.xmini{width:auto!important;padding:7px 9px;font-size:12.5px}
 
     <main class="xp-main">
       <div class="xp-topbar">
+        <span id="xCrumb">⌂ <b>Overview</b></span>
         <input id="xSearch" placeholder="🔎 Search bots, actions…  (Ctrl+K for palette)">
         <span class="tag live" id="xLiveTag">● LIVE SYNC</span>
         <span style="color:var(--mut);font-size:12px" id="xUpdated"></span>
@@ -642,6 +706,18 @@ if('IntersectionObserver' in window){
   const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io.unobserve(e.target);animateCount(e.target)}),{threshold:.4});
   $$('[data-count]').forEach(el=>io.observe(el));
 }else{$$('[data-count]').forEach(animateCount)}
+/* Ultra UI 2.0: scroll progress, nav shadow, reveal-on-scroll, back-to-top */
+(function(){
+  const bar=$('#scrollProgress'), nav=document.querySelector('nav'), toTop=$('#toTop');
+  const onScroll=()=>{ const h=document.documentElement; const max=h.scrollHeight-h.clientHeight; const p=max>0?h.scrollTop/max:0;
+    if(bar)bar.style.transform='scaleX('+p+')'; if(nav)nav.classList.toggle('scrolled',h.scrollTop>10); if(toTop)toTop.classList.toggle('show',h.scrollTop>600); };
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+  if(toTop)toTop.onclick=()=>window.scrollTo({top:0,behavior:'smooth'});
+  const targets=$$('section .card,section .tpl,section .feat,section .price,section details,.hero .stat,.lang-strip span');
+  targets.forEach((el,i)=>{el.classList.add('rv'); el.style.transitionDelay=Math.min(i%6,5)*60+'ms'});
+  if('IntersectionObserver' in window){ const ro=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');ro.unobserve(e.target)}}),{threshold:.07}); targets.forEach(el=>ro.observe(el)); }
+  else targets.forEach(el=>el.classList.add('in'));
+})();
 
 /* health */
 (async()=>{try{const h=await api('/api/health');$('#liveTxt').textContent='● LIVE · '+h.service+' v'+h.version;log('✅ Connected: '+h.service+' · '+h.runtime+' · region '+h.region,'lg-ok')}
@@ -818,7 +894,7 @@ function xLogout(silent){
 $('#xLogout').onclick=()=>xLogout(false);
 $('#xRefresh').onclick=()=>refreshAll();
 let xhLastCheck=0;
-function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name));$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
+function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name)); const CRUMB={overview:'📊 Overview',bots:'🤖 Bot Manager',hosting:'🚀 Bot Hosting',code:'🗂️ Code Hosting',telegram:'✈️ Telegram Lab',analytics:'📈 Analytics',site:'🎛️ Site Builder',system:'⚙️ System'}; const cr=$('#xCrumb'); if(cr)cr.innerHTML='⌂ › <b>'+(CRUMB[name]||name)+'</b>';$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
 $$('.xp-nav').forEach(t=>t.onclick=()=>gotoTab(t.dataset.xtab));
 
 /* ---------- charts (zero-dependency canvas) ---------- */
@@ -877,6 +953,7 @@ function renderXBots(serverBots){
   const q=($('#xSearch').value||'').toLowerCase();
   const match=b=>!q||(b.name+' '+(b.username||'')+' '+b.framework).toLowerCase().includes(q);
   $('#xAdminBots').innerHTML=xAdminBots.filter(match).length?xAdminBots.filter(match).map(b=>botRow(b,'<button class="btn small danger" onclick="xDelAdminBot(\''+b.id+'\')">Remove</button>')).join(''):'<tr><td colspan="5" style="color:var(--mut)">No console-managed bots yet.</td></tr>';
+  try{const nb=$('#xNavBots'); const tot=(serverBots||[]).length+xAdminBots.length; if(nb){nb.textContent=tot; nb.classList.toggle('hide',!tot)}}catch(e){}
   $('#xServerBots').innerHTML=(serverBots||[]).filter(match).length?(serverBots||[]).filter(match).map(b=>botRow(b,'<button class="btn small danger" onclick="xDelServerBot(\''+b.id+'\')">Remove</button>')).join(''):'<tr><td colspan="5" style="color:var(--mut)">Registry empty on this instance.</td></tr>';
   $('#xLocalBots').innerHTML=myBots.filter(match).length?myBots.map((b,i)=>match(b)?'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br>@'+esc(b.username):'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="flex"><button class="btn small ghost" onclick="xHookDelete('+i+')">Remove Webhook</button><button class="btn small danger" onclick="xDelLocalBot('+i+')">Delete</button></span></td></tr>':'').join(''):'<tr><td colspan="4" style="color:var(--mut)">None saved in this browser.</td></tr>';
 }
@@ -1092,7 +1169,7 @@ function xcSyncEditor(){if(xcActive){const f=xcFilesArr.find(x=>x.path===xcActiv
 function xcRenderFiles(){
   $('#xcFileList').innerHTML=xcFilesArr.length?xcFilesArr.map(f=>{const ext=(f.path.split('.').pop()||'').toLowerCase();return '<div class="fileitem'+(f.path===xcActive?' on':'')+'" onclick="xcOpen(\''+f.path.replace(/'/g,"\\'")+'\')"><span>'+(LANG_ICON[ext]||'📄')+' '+esc(f.path)+'</span><span>'+f.content.length+' B</span></div>'}).join(''):'<div class="fileitem">No files yet — add files, load a sample, or paste code below.</div>';
   $('#xcStats').innerHTML=[['🗂 Files',xcFilesArr.length],['💾 Size',(xcFilesArr.reduce((a,f)=>a+f.content.length,0)/1024).toFixed(1)+' KB'],['🌍 Languages',new Set(xcFilesArr.map(f=>(f.path.split('.').pop()||'').toLowerCase())).size],['📦 Saved Projects',Object.keys(xcProjects).length]].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
-  renderSavedProjects();
+  renderSavedProjects(); try{const np=$('#xNavProj'); const pc=Object.keys(xcProjects).length; if(np){np.textContent=pc; np.classList.toggle('hide',!pc)}}catch(e){}
 }
 window.xcOpen=p=>{xcSyncEditor();xcActive=p;const f=xcFilesArr.find(x=>x.path===p);$('#xcEditor').value=f?f.content:'';$('#xcActiveName').textContent=p;xcRenderFiles()};
 function xcUpsert(path,content){path=String(path||'').replace(/\\/g,'/').replace(/^\/+/,'').slice(0,200);if(!path)return;const ex=xcFilesArr.find(f=>f.path===path);if(ex)ex.content=content;else xcFilesArr.push({path,content});if(!xcActive)xcOpen(path)}
