@@ -42,7 +42,7 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         send(self, {"ok": True, "configured": admin_configured(),
-                    "method": "POST {username, password}"})
+                    "console": "v4", "method": "POST {username, password}"})
 
     def do_OPTIONS(self):
         send(self, {"ok": True})

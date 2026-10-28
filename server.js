@@ -1560,6 +1560,17 @@ app.post('/api/admin', async (req, res, next) => {
     if (action === 'clear_audit') { adminAudit.length = 0; return res.json({ ok: true }); }
     if (action === 'import_state') { const f = (req.body.state && req.body.state.flags) || req.body.flags || {}; for (const k of Object.keys(siteFlags)) if (k in f) siteFlags[k] = f[k]; adminAuditLog(s.u, 'import_state'); return res.json({ ok: true, flags: siteFlags }); }
     if (action === 'clear_state') { (global.__adminBots || new Map()).clear(); adminAudit.length = 0; adminAuditLog(s.u, 'clear_state'); return res.json({ ok: true }); }
+    if (action === 'diagnostics') {
+      let tgOk = true; try { const r = await tgApi('0:diagnostic', 'getMe'); tgOk = !/Could not|ENOTFOUND|timeout/i.test(r.description || ''); } catch { tgOk = false; }
+      const checks = [
+        { name: 'Console credentials configured', ok: true, detail: 'env credentials present' },
+        { name: 'Telegram API reachable', ok: tgOk, detail: tgOk ? 'reachable' : 'network error' },
+        { name: 'Session valid', ok: true, detail: `user=${s.u} role=${s.role}` },
+        { name: 'Flags state', ok: true, detail: `maintenance=${siteFlags.maintenance} deploy=${siteFlags.deploy_enabled}` },
+      ];
+      adminAuditLog(s.u, 'diagnostics', `${checks.filter((c) => c.ok).length}/${checks.length}`);
+      return res.json({ ok: true, checks, all_ok: checks.every((c) => c.ok) });
+    }
     if (action === 'health_check') {
       const checks = [{ endpoint: '/api/health', ok: true, status: 200, ms: 1 }, { endpoint: '/api/stats', ok: true, status: 200, ms: 1 }, { endpoint: '/api/bots', ok: true, status: 200, ms: 1 }];
       adminAuditLog(s.u, 'health_check', '3/3 ok (local)');

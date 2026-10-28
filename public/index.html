@@ -114,6 +114,9 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 .preset b{display:block;color:#fff;font-size:14px;margin-bottom:3px}.preset small{color:var(--mut);font-size:12px;line-height:1.45;display:block}
 .preset.on{border-color:var(--blue);background:#10254a;box-shadow:0 0 0 1px var(--blue)}
 .hact{display:flex;gap:6px;flex-wrap:wrap}.hstat{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:700;background:#3a2a0d;color:#ffc857}.hstat.live{background:#0d3a22;color:var(--grn)}.hstat.off{background:#3a0d18;color:var(--red)}
+@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
+.dirty-badge{font-size:11px;background:#3a2a0d;color:#ffc857;padding:3px 10px;border-radius:99px;font-weight:700}
+.diag-ok{color:var(--grn)}.diag-bad{color:var(--red)}
 </style>
 </head>
 <body>
@@ -285,6 +288,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
     <form id="xLoginForm">
       <label>Username</label><input id="xUser" autocomplete="username" required>
       <label>Password</label><input id="xPass" type="password" autocomplete="current-password" required>
+      <label class="chk"><input type="checkbox" id="xShowPass"> Show password</label>
       <div id="xLoginErr" style="color:var(--red);font-size:13px;margin-top:10px"></div>
       <button class="btn mt" style="width:100%;justify-content:center" id="xLoginBtn">Sign In</button>
       <button type="button" class="btn ghost mt" style="width:100%;justify-content:center" id="xGateClose">Cancel</button>
@@ -296,7 +300,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v4 · keys 1-7 switch tabs</small></div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
       <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
@@ -462,8 +466,9 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 
       <div data-xpane="system" class="hide">
         <div class="xp-2col">
-          <div class="card"><b style="color:#fff">🩺 Endpoint Health</b><p style="color:var(--mut);font-size:13px;margin:8px 0">Probes every public API of this deployment from the server.</p>
-            <button class="btn small" id="xsHealth">▶ Run Health Check</button><pre class="json mt" id="xsHealthOut">Not run yet.</pre></div>
+          <div class="card"><b style="color:#fff">🩺 Diagnostics Center</b><p style="color:var(--mut);font-size:13px;margin:8px 0">One click checks login config, every API, Telegram reachability, browser storage &amp; session — then tells you exactly what is wrong, if anything.</p>
+            <div class="flex"><button class="btn small" id="xsDiag">▶ Run Full Diagnostics</button><button class="btn small ghost" id="xsHealth">Endpoint Health Only</button><button class="btn small ghost" id="xsDiagCopy">📋 Copy Report</button></div>
+            <pre class="json mt" id="xsDiagOut">Not run yet.</pre><pre class="json mt" id="xsHealthOut">Endpoint health not run yet.</pre></div>
           <div class="card"><b style="color:#fff">💾 State Backup</b>
             <div class="xrow"><span>Export full state (flags, bots, audit)</span><button class="btn small ghost" id="xsExport">Export</button></div>
             <div class="xrow"><span>Import state file</span><span class="flex"><input type="file" id="xsImportFile" accept="application/json" style="width:210px"><button class="btn small ghost" id="xsImport">Import</button></span></div>
@@ -495,7 +500,10 @@ function saveBots(){localStorage.setItem(LS,JSON.stringify(myBots))}
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),3400)}
 function log(msg,cls=''){const el=$('#log');const d=document.createElement('div');if(cls)d.className=cls;d.textContent=msg;el.appendChild(d);el.scrollTop=el.scrollHeight}
 async function api(path,opts={}){
-  const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),20000);
+  let r; try{ r=await fetch(path,{headers:{'Content-Type':'application/json'},signal:ctl.signal,...opts}); }
+  catch(e){ clearTimeout(to); throw new Error(e.name==='AbortError'?'Request timed out (20s) — check connection & retry':'Network error — server unreachable'); }
+  clearTimeout(to);
   let data={}; try{data=await r.json()}catch(e){}
   if(!r.ok) throw new Error(data.error||data.description||('HTTP '+r.status));
   return data;
@@ -504,11 +512,12 @@ function step(n,state){$$('.step').forEach(s=>{const i=+s.dataset.step;if(i<n)s.
 function resetSteps(){$$('.step').forEach(s=>s.className='step');$('#pipeTag').textContent='IDLE';$('#pipeTag').className='tag'}
 
 /* counters */
-const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io.unobserve(e.target);
-  const end=parseFloat(e.target.dataset.count),dec=+(e.target.dataset.dec||0),t0=performance.now();
-  (function tick(t){const p=Math.min(1,(t-t0)/1400);e.target.textContent=(end*p).toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');if(p<1)requestAnimationFrame(tick)})(t0);
-}),{threshold:.4});
-$$('[data-count]').forEach(el=>io.observe(el));
+function animateCount(el){const end=parseFloat(el.dataset.count),dec=+(el.dataset.dec||0),t0=performance.now();
+  (function tick(t){const p=Math.min(1,(t-t0)/1400);el.textContent=(end*p).toFixed(dec).replace(/\B(?=(\d{3})+(?!\d))/g,',');if(p<1)requestAnimationFrame(tick)})(t0)}
+if('IntersectionObserver' in window){
+  const io=new IntersectionObserver(es=>es.forEach(e=>{if(!e.isIntersecting)return;io.unobserve(e.target);animateCount(e.target)}),{threshold:.4});
+  $$('[data-count]').forEach(el=>io.observe(el));
+}else{$$('[data-count]').forEach(animateCount)}
 
 /* health */
 (async()=>{try{const h=await api('/api/health');$('#liveTxt').textContent='● LIVE · '+h.service+' v'+h.version;log('✅ Connected: '+h.service+' · '+h.runtime+' · region '+h.region,'lg-ok')}
@@ -632,7 +641,10 @@ fetch('/api/admin?action=public_config').then(r=>r.json()).then(d=>{if(d&&d.flag
 /* entry points: secret hash, Ctrl+Shift+A, or 5 rapid clicks on the brand mark */
 function openGate(){
   if(sessionStorage.getItem('x_console_token')){openPanel();return}
-  $('#xGate').classList.remove('hide'); setTimeout(()=>$('#xUser').focus(),50);
+  $('#xGate').classList.remove('hide');
+  const notice=sessionStorage.getItem('x_console_notice');
+  if(notice){$('#xLoginErr').textContent=notice;sessionStorage.removeItem('x_console_notice')}
+  setTimeout(()=>$('#xUser').focus(),50);
   if(location.hash)history.replaceState(null,'',location.pathname+location.search);
 }
 if(location.hash==='#/console-900s')openGate();
@@ -648,9 +660,12 @@ $('#xGate').addEventListener('click',e=>{if(e.target.id==='xGate')$('#xGate').cl
 
 async function xApi(path,opts={}){
   const tok=sessionStorage.getItem('x_console_token');
-  const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{}),...(opts.headers||{})}});
+  const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),25000);
+  let r; try{ r=await fetch(path,{...opts,signal:ctl.signal,headers:{'Content-Type':'application/json',...(tok?{Authorization:'Bearer '+tok}:{}),...(opts.headers||{})}}); }
+  catch(e){ clearTimeout(to); throw new Error(e.name==='AbortError'?'Request timed out (25s)':'Network error — server unreachable'); }
+  clearTimeout(to);
   let d={}; try{d=await r.json()}catch(e){}
-  if(r.status===401){xLogout(true);throw new Error('Session expired — sign in again')}
+  if(r.status===401){sessionStorage.setItem('x_console_notice','⏰ Session expired — please sign in again.');xLogout(true);openGate();throw new Error('Session expired — sign in again')}
   if(!r.ok)throw new Error(d.error||('HTTP '+r.status));
   return d;
 }
@@ -660,9 +675,10 @@ $('#xLoginForm').onsubmit=async e=>{
     const d=await api('/api/admin_login',{method:'POST',body:JSON.stringify({username:$('#xUser').value.trim(),password:$('#xPass').value})});
     sessionStorage.setItem('x_console_token',d.token); sessionStorage.setItem('x_console_exp',d.expires_at); sessionStorage.setItem('x_console_user',d.user);
     $('#xPass').value=''; $('#xGate').classList.add('hide'); openPanel(); toast('🛡️ Welcome, '+d.user);
-  }catch(err){$('#xLoginErr').textContent='❌ '+err.message}
+  }catch(err){$('#xLoginErr').textContent='❌ '+err.message;const box=$('#xGate .box');box.style.animation='none';void box.offsetWidth;box.style.animation='shake .4s'}
   btn.disabled=false; btn.textContent='Sign In';
 };
+$('#xShowPass').onchange=e=>{$('#xPass').type=e.target.checked?'text':'password'};
 function fmtExp(){const exp=+sessionStorage.getItem('x_console_exp')||0; if(!exp)return''; const s=exp-Math.floor(Date.now()/1000); if(s<=0)return'expired'; return '⏳ '+Math.floor(s/60)+'m left'}
 let xTimer=null, xAnalytics=null, xAdminBots=[];
 function openPanel(){
@@ -677,7 +693,8 @@ function xLogout(silent){
 }
 $('#xLogout').onclick=()=>xLogout(false);
 $('#xRefresh').onclick=()=>refreshAll();
-function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name));$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
+let xhLastCheck=0;
+function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name));$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
 $$('.xp-nav').forEach(t=>t.onclick=()=>gotoTab(t.dataset.xtab));
 
 /* ---------- charts (zero-dependency canvas) ---------- */
@@ -703,16 +720,20 @@ function drawAnalytics(){if(!xAnalytics)return; drawLine($('#chAn'),xAnalytics.d
 }
 
 /* ---------- data ---------- */
+let xServerCache=[], siteDirty=false, xFlagsLoaded=false;
+function userInteracting(){const a=document.activeElement;return a&&$('#xPanel').contains(a)&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName)}
 async function refreshAll(silent){
+  if(silent&&userInteracting())return; // never yank data from under someone typing
   try{
     const [ov,st,bots]=await Promise.all([xApi('/api/admin?action=overview'),api('/api/stats').catch(()=>({})),api('/api/bots').catch(()=>({bots:[],count:0}))]);
-    xAnalytics=ov.analytics||xAnalytics; xAdminBots=ov.admin_bots||[];
+    xAnalytics=ov.analytics||xAnalytics; xAdminBots=ov.admin_bots||[]; xServerCache=bots.bots||[];
     const t=(xAnalytics&&xAnalytics.totals)||{};
     $('#xStats').innerHTML=[['🤖 Bots (instance)',bots.count??(bots.bots||[]).length],['🛡️ Managed Bots',xAdminBots.length],['💬 Messages (14d)',(t.messages_14d||st.showcase?.messagesPerDay||0).toLocaleString()],['🚀 Deploys (14d)',t.deploys_14d||'—']].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
     $('#xPlatform').textContent=JSON.stringify(ov.platform,null,2);
     $('#xAudit').innerHTML=(ov.audit&&ov.audit.length)?ov.audit.map(a=>'<div class="audit-item"><span>'+new Date(a.at*1000).toLocaleTimeString()+'</span><b>'+esc(a.actor)+'</b> '+esc(a.action)+' <em>'+esc(a.detail||'')+'</em></div>').join(''):'No actions recorded yet.';
-    fillFlags(ov.flags||{}); drawLine($('#chTraffic'),xAnalytics?xAnalytics.days:[]); drawDonut($('#chFw'),xAnalytics?xAnalytics.frameworks:[]);
-    renderXBots(bots.bots||[]); $('#xUpdated').textContent='updated '+new Date().toLocaleTimeString(); window._xAudit=ov.audit||[];
+    if(!siteDirty||!xFlagsLoaded){fillFlags(ov.flags||{});xFlagsLoaded=true}
+    drawLine($('#chTraffic'),xAnalytics?xAnalytics.days:[]); drawDonut($('#chFw'),xAnalytics?xAnalytics.frameworks:[]);
+    renderXBots(xServerCache); $('#xUpdated').textContent='updated '+new Date().toLocaleTimeString(); window._xAudit=ov.audit||[];
     if(!silent)toast('↻ Console data refreshed');
   }catch(e){if(!silent)toast('❌ '+e.message)}
 }
@@ -735,7 +756,8 @@ function renderXBots(serverBots){
   $('#xServerBots').innerHTML=(serverBots||[]).filter(match).length?(serverBots||[]).filter(match).map(b=>botRow(b,'<button class="btn small danger" onclick="xDelServerBot(\''+b.id+'\')">Remove</button>')).join(''):'<tr><td colspan="5" style="color:var(--mut)">Registry empty on this instance.</td></tr>';
   $('#xLocalBots').innerHTML=myBots.filter(match).length?myBots.map((b,i)=>match(b)?'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br>@'+esc(b.username):'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="flex"><button class="btn small ghost" onclick="xHookDelete('+i+')">Remove Webhook</button><button class="btn small danger" onclick="xDelLocalBot('+i+')">Delete</button></span></td></tr>':'').join(''):'<tr><td colspan="4" style="color:var(--mut)">None saved in this browser.</td></tr>';
 }
-$('#xSearch').addEventListener('input',()=>refreshAll(true));
+let xSearchT=null;
+$('#xSearch').addEventListener('input',()=>{clearTimeout(xSearchT);xSearchT=setTimeout(()=>{renderXBots(xServerCache);renderHosted()},160)});
 window.xDelAdminBot=async id=>{if(!confirm('Remove this managed bot?'))return; try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'remove_bot',id})});refreshAll(true)}catch(e){toast('❌ '+e.message)}};
 window.xDelServerBot=async id=>{if(!confirm('Remove this bot from the server registry?'))return; try{await xApi('/api/bots?id='+encodeURIComponent(id),{method:'DELETE'});refreshAll(true)}catch(e){toast('❌ '+e.message)}};
 window.xDelLocalBot=i=>{if(!confirm('Delete this bot from this browser?'))return; myBots.splice(i,1);saveBots();renderBots();refreshAll(true)};
@@ -791,8 +813,9 @@ function updatePreview(){const h=$('#xfHero').value,s=$('#xfHeroSub').value; $('
 ['xfHero','xfHeroSub','xfBrand','xfAnnounce'].forEach(id=>{const e=document.getElementById(id); if(e)e.addEventListener('input',updatePreview)});
 let xAccent=''; $$('#xfAccent .swatch').forEach(b=>b.onclick=()=>{xAccent=b.dataset.accent;$$('#xfAccent .swatch').forEach(x=>x.style.outline='');b.style.outline='2px solid #fff';toast('Accent selected — Save to apply')});
 function collectFlags(){return {maintenance:$('#xfMaintenance').checked,registrations_open:$('#xfReg').checked,deploy_enabled:$('#xfDeploy').checked,show_templates:$('#xfTpl').checked,show_pricing:$('#xfPricing').checked,show_faq:$('#xfFaq').checked,show_playground:$('#xfPlay').checked,show_bots_section:$('#xfBotsSec').checked,announcement:$('#xfAnnounce').value.trim(),site_title:$('#xfTitle').value.trim(),brand_name:$('#xfBrand').value.trim(),hero_title:$('#xfHero').value.trim(),hero_subtitle:$('#xfHeroSub').value.trim(),footer_text:$('#xfFooter').value.trim(),support_url:$('#xfSupport').value.trim(),maintenance_message:$('#xfMaintMsg').value.trim(),max_bots_per_user:$('#xfMaxBots').value.trim(),accent:xAccent,default_framework:$('#xfFramework').value,default_region:$('#xfRegion').value}}
+$$('[data-xpane="site"] input,[data-xpane="site"] textarea,[data-xpane="site"] select').forEach(el=>el.addEventListener('input',()=>{siteDirty=true;const b=$('#xfSave');if(b)b.textContent='💾 Save & Apply Live ●'}));
 $('#xfSave').onclick=async()=>{
-  xCfg=collectFlags(); localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg);
+  xCfg=collectFlags(); localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg); siteDirty=false; $('#xfSave').textContent='💾 Save & Apply Live';
   try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:xCfg})}); toast('💾 Site is now updated live')}catch(e){toast('Saved locally · server: '+e.message)}
   refreshAll(true);
 };
@@ -824,12 +847,21 @@ $('#xhValidate').onclick=async()=>{
   try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'validate',token})});const me=d.telegram.result;out.innerHTML='<span style="color:var(--grn)">✅ @'+esc(me.username)+'</span>';if(!$('#xhName').value)$('#xhName').value=me.first_name||'';hlog('✅ Token valid → @'+me.username,'#2fd67a')}
   catch(e){out.innerHTML='<span style="color:var(--red)">❌ '+esc(e.message)+'</span>';hlog('❌ '+e.message,'#ff5d73')}
 };
+window.xhPresetOpts=b=>['standard','assistant','menu','echo'].map(p=>'<option value="'+p+'"'+((b.preset||'standard')===p?' selected':'')+'>'+p+'</option>').join('');
+window.xhSetPreset=async(i,preset)=>{
+  const b=hostedBots[i]; if(!b||!b.token)return; b.preset=preset; saveHosted();
+  hlog('🔄 Switching '+(b.username?'@'+b.username:b.name)+' → '+preset+' …','#8fa3c8');
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'bot_start',token:b.token,preset,welcome:b.welcome||''})}); if(d.webhook_url)b.webhook_url=d.webhook_url; b.live=true; saveHosted(); renderHosted(); hlog('✅ Personality live: '+preset,'#2fd67a')}
+  catch(e){hlog('❌ Preset switch: '+e.message,'#ff5d73'); renderHosted()}
+};
 function renderHosted(){
   const tb=$('#xhBots'); if(!tb)return;
   const live=hostedBots.filter(b=>b.live).length;
   $('#xhStats').innerHTML=[['☁️ Hosted Bots',hostedBots.length],['🟢 Live Now',live],['🔴 Stopped',hostedBots.length-live],['🤖 Personalities',new Set(hostedBots.map(b=>b.preset)).size]].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
-  tb.innerHTML=hostedBots.length?hostedBots.map((b,i)=>'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br><a href="https://t.me/'+esc(b.username)+'" target="_blank">@'+esc(b.username)+'</a>':'')+'<br><small style="color:var(--mut)">'+new Date((b.created_at||0)*1000).toLocaleDateString()+'</small></td><td><span class="tag">'+esc(b.preset||'standard')+'</span></td><td><span class="hstat '+(b.live?'live':'off')+'" id="xhSt'+i+'">'+(b.live?'● LIVE':'○ STOPPED')+'</span></td><td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(b.webhook_url||'')+'">'+esc(b.webhook_url||'—')+'</td><td><div class="hact">'
-    +'<button class="btn small ghost" onclick="xhStatus('+i+')">Status</button>'
+  const hq=($('#xSearch').value||'').toLowerCase();
+  const hrows=hostedBots.map((b,i)=>({b,i})).filter(({b})=>!hq||(b.name+' '+(b.username||'')+' '+(b.preset||'')).toLowerCase().includes(hq));
+  tb.innerHTML=hrows.length?hrows.map(({b,i})=>'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br><a href="https://t.me/'+esc(b.username)+'" target="_blank">@'+esc(b.username)+'</a>':'')+'<br><small style="color:var(--mut)">'+new Date((b.created_at||0)*1000).toLocaleDateString()+'</small></td><td><span class="tag">'+esc(b.preset||'standard')+'</span></td><td><span class="hstat '+(b.live?'live':'off')+'" id="xhSt'+i+'">'+(b.live?'● LIVE':'○ STOPPED')+'</span></td><td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(b.webhook_url||'')+'">'+esc(b.webhook_url||'—')+'</td><td><div class="hact">'
+    +'<select onchange="xhSetPreset('+i+',this.value)" title="Change personality" style="width:auto;padding:7px 9px;font-size:12px">'+xhPresetOpts(b)+'</select><button class="btn small ghost" onclick="xhStatus('+i+')">Status</button>'
     +(b.live?'<button class="btn small ghost" onclick="xhCtl('+i+',\'bot_stop\')">Stop</button>':'<button class="btn small" onclick="xhCtl('+i+',\'bot_start\')">Start</button>')
     +'<button class="btn small ghost" onclick="xhCtl('+i+',\'bot_restart\')">Restart</button>'
     +'<button class="btn small ghost" onclick="xhCopy('+i+')">Copy URL</button>'
@@ -886,11 +918,41 @@ window.xhDel=async i=>{
 $('#xhRefreshAll').onclick=async()=>{for(let i=0;i<hostedBots.length;i++)await window.xhStatus(i);toast('↻ All statuses refreshed')};
 $('#xhClearLog').onclick=()=>{$('#xhLog').innerHTML='';$$('[data-hstep]').forEach(s=>s.className='step')};
 
+/* ================= diagnostics center + shortcuts (v4) ================= */
+let xDiagReport='';
+async function runDiagnostics(){
+  const out=$('#xsDiagOut'); out.textContent='⏳ Running full diagnostics…';
+  const rows=[]; const push=(name,ok,detail)=>rows.push({name,ok,detail});
+  try{const c=await api('/api/admin_login'); push('Console configured',!!c.configured,'login API v'+(c.console||'?'))}catch(e){push('Console configured',false,e.message)}
+  const t0=performance.now();
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'diagnostics'})}); (d.checks||[]).forEach(c=>push(c.name,!!c.ok,c.detail)); push('Diagnostics API',true,Math.round(performance.now()-t0)+'ms')}catch(e){push('Diagnostics API',false,e.message)}
+  try{const h=await api('/api/health'); push('Platform health',!!h.ok,h.service+' · '+(h.runtime||''))}catch(e){push('Platform health',false,e.message)}
+  try{const pc=await api('/api/admin?action=public_config'); push('Public site config',!!pc.ok,'maintenance='+(pc.flags&&pc.flags.maintenance))}catch(e){push('Public site config',false,e.message)}
+  push('Browser storage',true,'hosted bots: '+hostedBots.length+' · saved bots: '+myBots.length+' · config keys: '+Object.keys(xCfg).length);
+  const exp=+sessionStorage.getItem('x_console_exp')||0; push('Session',exp>Date.now()/1000,fmtExp()||'no session');
+  push('Console version',true,'v4 · '+navigator.userAgent.slice(0,60)+'…');
+  const bad=rows.filter(r=>!r.ok);
+  xDiagReport=rows.map(r=>(r.ok?'✅':'❌')+' '+r.name+': '+r.detail).join('\n');
+  out.innerHTML=rows.map(r=>'<span class="'+(r.ok?'diag-ok':'diag-bad')+'">'+(r.ok?'✅':'❌')+'</span> '+esc(r.name)+' — '+esc(String(r.detail))).join('\n')
+    +'\n\n'+(bad.length?('⚠ '+bad.length+' problem(s) found — see ❌ rows above.'):'🎉 Everything is working properly.');
+  if(bad.length)toast('⚠ Diagnostics found '+bad.length+' problem(s)'); else toast('🎉 All diagnostics passed');
+}
+$('#xsDiag').onclick=runDiagnostics;
+$('#xsDiagCopy').onclick=()=>{if(!xDiagReport){toast('Run diagnostics first');return}navigator.clipboard.writeText(xDiagReport);toast('📋 Diagnostic report copied')};
+/* keyboard shortcuts: 1-7 switch tabs, ? opens palette (when not typing) */
+addEventListener('keydown',e=>{
+  if($('#xPanel').classList.contains('hide'))return;
+  const a=document.activeElement; if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))return;
+  const tabs=['overview','bots','hosting','telegram','analytics','site','system'];
+  if(/^[1-7]$/.test(e.key))gotoTab(tabs[+e.key-1]);
+});
+const xWhoEl=$('#xWho'); if(xWhoEl&&!xWhoEl.dataset.v){xWhoEl.dataset.v=1}
+
 /* command palette */
 const PALETTE=[
  ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
  ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
- ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
+ ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['🔬 Run Full Diagnostics',()=>{gotoTab('system');runDiagnostics()}],['🚀 Bot Hosting',()=>gotoTab('hosting')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
  ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],
 ];
 function openPalette(){$('#xPalette').classList.remove('hide');renderPalette('');setTimeout(()=>$('#xPalInput').focus(),40)}

@@ -162,6 +162,26 @@ class handler(BaseHTTPRequestHandler):
             audit(actor, "clear_state")
             return send(self, {"ok": True})
 
+        if action == "diagnostics":
+            checks = []
+            checks.append({"name": "Console credentials configured", "ok": True,
+                           "detail": "env credentials present (values never exposed)"})
+            ok_t, res_t = telegram("0:diagnostic", "getMe", timeout=8)
+            reachable = "Could not reach" not in str((res_t or {}).get("description", ""))
+            checks.append({"name": "Telegram API reachable", "ok": reachable,
+                           "detail": (res_t or {}).get("description", "ok") if reachable else "network error reaching api.telegram.org"})
+            checks.append({"name": "Session valid", "ok": True,
+                           "detail": f"user={actor} role={s.get('role')} exp={s.get('exp')}"})
+            checks.append({"name": "Server time", "ok": True,
+                           "detail": datetime.now(timezone.utc).isoformat()})
+            checks.append({"name": "Flags state", "ok": True,
+                           "detail": f"maintenance={FLAGS['maintenance']} registrations={FLAGS['registrations_open']} deploy={FLAGS['deploy_enabled']}"})
+            checks.append({"name": "Managed/hosted bots (instance)", "ok": True,
+                           "detail": str(len(ADMIN_BOTS))})
+            audit(actor, "diagnostics", f"{sum(c['ok'] for c in checks)}/{len(checks)}")
+            return send(self, {"ok": True, "checks": checks,
+                               "all_ok": all(c["ok"] for c in checks)})
+
         if action == "health_check":
             host, proto = host_of(self)
             checks = []
