@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: editz900s-bot-cloud
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.18.0
+      - key: DATA_DIR
+        value: /opt/render/project/src/data
+      - key: SELF_PING_URL
+        sync: false

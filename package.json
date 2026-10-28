@@ -1,0 +1,22 @@
+{
+  "name": "editz900s-bot-cloud",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Advanced Telegram bot hosting panel — upload Python, Node.js or any language. No login, no signup, auto-restart forever. Built by editz900s.",
+  "main": "server.js",
+  "author": "editz900s",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "express": "^4.21.2",
+    "multer": "^2.0.2",
+    "ws": "^8.18.3"
+  }
+}
