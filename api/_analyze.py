@@ -47,12 +47,13 @@ PY_IMPORT_MAP = {"telegram": "python-telegram-bot", "aiogram": "aiogram", "telet
                  "openai": "openai", "httpx": "httpx", "numpy": "numpy", "pandas": "pandas"}
 POLLING_PATTERNS = [r"run_polling", r"start_polling", r"bot\.launch\s*\(", r"launch\s*\(\s*\)",
                     r"run_until_disconnected", r"executor\.start_polling", r"polling\s*\(", r"getUpdates",
-                    r"start_polling", r"infinity_polling", r"bot\.polling"]
+                    r"start_polling", r"infinity_polling", r"bot\.polling", r"TelegramLongPollingBot",
+                    r"GetUpdatesChan", r"[Ll]ong.?[Pp]olling", r"bot\.listen", r"get_updates"]
 WEBHOOK_PATTERNS = [r"setWebhook", r"set_webhook", r"run_webhook", r"webhook", r"@app\.(post|route|get)",
                     r"FastAPI", r"Flask", r"express\s*\(", r"createServer", r"\.listen\s*\("]
 BASE_IMAGES = {"python": "python:3.12-slim", "node": "node:20-slim", "bun": "oven/bun:1",
                "deno": "denoland/deno:1.46", "ruby": "ruby:3.3-slim", "php": "php:8.3-cli",
-               "go": "golang:1.22-alpine", "rust": "rust:1.80-slim", "java": "eclipse-temurin:21-jre",
+               "go": "golang:1.22-alpine", "rust": "rust:1.80-slim", "java": "maven:3.9-eclipse-temurin-21",
                "dotnet": "mcr.microsoft.com/dotnet/runtime:8.0", "bash": "ubuntu:24.04",
                "perl": "perl:5.40-slim", "lua": "alpine:3.20", "dart": "dart:stable", "elixir": "elixir:1.17-slim"}
 
@@ -109,6 +110,18 @@ def _detect(files):
         exts = RUNTIMES[runtime]["ext"]
         code = [n for n in names if any(n.lower().endswith(e) for e in exts)]
         entry = code[0] if len(code) == 1 else entry
+    if runtime == "java" and not entry:
+        jars = [n for n in names if n.lower().endswith(".jar")]
+        if jars:
+            entry = jars[0]
+        else:
+            for f in files:
+                if f["path"].lower().endswith(".java") and "void main" in (f.get("content") or ""):
+                    entry = f["path"]; break
+            if not entry:
+                main_java = [n for n in names if n.lower().endswith("/main.java") or n.lower() == "main.java"]
+                if main_java:
+                    entry = main_java[0]
 
     framework = None
     for name, pats in FRAMEWORK_PATTERNS:
@@ -132,6 +145,39 @@ def _detect(files):
                 deps += list((data.get("dependencies") or {}).keys())
             except Exception:
                 pass
+    if runtime == "java":
+        pom = next((f for f in files if f["path"].lower().endswith("pom.xml")), None)
+        if pom:
+            deps += re.findall(r"<artifactId>([^<]+)</artifactId>", pom.get("content") or "")
+        gradle = next((f for f in files if "build.gradle" in f["path"].lower()), None)
+        if gradle:
+            deps += re.findall(r"(?:implementation|api|compileOnly)\s*\(?\s*['\"]([\w.\-]+:[\w.\-]+):", gradle.get("content") or "")
+    if runtime == "go":
+        gomod = next((f for f in files if f["path"].lower().endswith("go.mod")), None)
+        if gomod:
+            deps += [l.strip().split(" ")[0] for l in (gomod.get("content") or "").splitlines()
+                     if l.strip() and not l.strip().startswith(("module", "go ", "//"))]
+    if runtime == "rust":
+        cargo = next((f for f in files if f["path"].lower().endswith("cargo.toml")), None)
+        if cargo:
+            m = re.search(r"\[dependencies\](.*?)(\n\[|\Z)", cargo.get("content") or "", re.S)
+            if m:
+                deps += re.findall(r"^([\w\-]+)\s*=", m.group(1), re.M)
+    if runtime == "php":
+        comp = next((f for f in files if f["path"].lower().endswith("composer.json")), None)
+        if comp:
+            try:
+                deps += list((json.loads(comp.get("content") or "{}").get("require") or {}).keys())
+            except Exception:
+                pass
+    if runtime == "ruby":
+        gem = next((f for f in files if f["path"].lower().endswith("gemfile")), None)
+        if gem:
+            deps += re.findall(r"gem\s+['\"]([\w\-]+)['\"]", gem.get("content") or "")
+    if runtime == "dotnet":
+        for f in files:
+            if f["path"].lower().endswith(".csproj"):
+                deps += re.findall(r"PackageReference\s+Include=\"([^\"]+)\"", f.get("content") or "")
     seen_deps = {}
     for d in deps:
         if d:
@@ -177,7 +223,21 @@ def _detect(files):
         install_cmd = "cargo build --release"
         start_cmd = "cargo run --release"
     elif runtime == "java":
-        start_cmd = "java -jar app.jar" if endswith(".jar") else "mvn -q exec:java"
+        if entry and entry.lower().endswith(".jar"):
+            start_cmd = f"java -jar {entry}"
+        elif has("pom.xml"):
+            install_cmd = "mvn -q -DskipTests package"
+            start_cmd = "java -jar target/app.jar"
+            pom_txt = next((f.get("content") or "" for f in files if f["path"].lower().endswith("pom.xml")), "")
+            if "maven-shade-plugin" not in pom_txt and "spring-boot" not in pom_txt:
+                warnings.append("Maven project: package a runnable fat-jar (maven-shade-plugin with finalName=app, "
+                                "as in the Java sample) or set a custom start command like `mvn exec:java`.")
+        elif has("build.gradle") or has("build.gradle.kts"):
+            gradlew = any(n.lower().endswith("gradlew") for n in names)
+            install_cmd = "./gradlew -q build -x test" if gradlew else "gradle -q build -x test"
+            start_cmd = "./gradlew -q run" if gradlew else "gradle -q run"
+        else:
+            start_cmd = f"java {entry}" if entry else "java Main.java"  # JDK 11+ single-file source launch
     elif runtime == "dotnet":
         start_cmd = "dotnet run"
     elif runtime == "bash":

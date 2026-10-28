@@ -345,7 +345,12 @@ function defaultStartCommand(bot) {
     case 'php': return `php ${entry}`.trim();
     case 'go': return m.entry && m.entry.endsWith('.go') ? `go run ${entry}` : 'go run .';
     case 'rust': return 'cargo run --release';
-    case 'java': return m.entry && m.entry.endsWith('.jar') ? `java -jar ${entry}` : `java ${entry}`.trim();
+    case 'java': {
+      if (m.entry && m.entry.endsWith('.jar')) return `java -jar ${entry}`;
+      if (exists(path.join(bot.filesDir, 'pom.xml'))) return 'java -jar target/app.jar';
+      if (m.entry && m.entry.endsWith('.java')) return `java ${entry}`;
+      return `java ${entry}`.trim();
+    }
     case 'dotnet': return 'dotnet run --project .';
     case 'bash': return `bash ${entry}`.trim();
     case 'perl': return `perl ${entry}`.trim();
@@ -377,8 +382,12 @@ function defaultInstallCommand(bot) {
       return hasTop('go.mod') ? 'go mod download' : '';
     case 'rust':
       return hasTop('Cargo.toml') ? 'cargo build --release' : '';
+    case 'java':
+      if (hasTop('pom.xml')) return 'mvn -q -DskipTests package';
+      if (hasTop('build.gradle') || hasTop('build.gradle.kts')) return exists(path.join(bot.filesDir, 'gradlew')) ? './gradlew -q build -x test' : 'gradle -q build -x test';
+      return '';
     case 'dotnet':
-      return hasTop('.csproj') || hasTop('.sln') ? 'dotnet restore' : '';
+      return [...top].some((f) => /\.(csproj|sln)$/i.test(f)) ? 'dotnet restore' : '';
     default:
       return '';
   }
@@ -1589,20 +1598,27 @@ app.post('/api/admin', async (req, res, next) => {
       else if (endswith('.pl')) runtime = 'perl';
       else if (endswith('.lua')) runtime = 'lua';
       const ENTRIES = { python: ['bot.py', 'main.py', 'app.py', 'index.py'], node: ['index.js', 'bot.js', 'main.js', 'app.js'], deno: ['index.ts', 'main.ts'], ruby: ['bot.rb', 'main.rb'], php: ['index.php', 'bot.php'], go: ['main.go'], rust: ['src/main.rs', 'main.rs'], bash: ['start.sh', 'run.sh', 'bot.sh'], perl: ['bot.pl', 'main.pl'], lua: ['bot.lua', 'main.lua'] };
-      const entry = (ENTRIES[runtime] || []).map((c) => names.find((n) => n.toLowerCase() === c || n.toLowerCase().endsWith('/' + c))).find(Boolean) || null;
+      let entry = (ENTRIES[runtime] || []).map((c) => names.find((n) => n.toLowerCase() === c || n.toLowerCase().endsWith('/' + c))).find(Boolean) || null;
+      if (!entry && runtime === 'java') entry = names.find((n) => n.toLowerCase().endsWith('.jar')) || names.find((n) => /main\.java$/i.test(n)) || names.find((n) => n.toLowerCase().endsWith('.java')) || null;
+      if (!entry && runtime === 'dotnet') entry = names.find((n) => n.toLowerCase().endsWith('.cs')) || null;
       const FW = [['python-telegram-bot', /from telegram|Application\.builder/], ['aiogram', /aiogram/], ['Telethon', /telethon/], ['Pyrogram', /pyrogram/], ['Telegraf (Node)', /telegraf/], ['grammY (Node)', /grammy/i], ['node-telegram-bot-api', /node-telegram-bot-api/], ['Go Telegram Bot API', /telegram-bot-api/], ['Teloxide (Rust)', /teloxide/]];
       const framework = (FW.find(([, re]) => re.test(blob)) || [null])[0];
       const polling = /run_polling|start_polling|run_until_disconnected|infinity_polling|bot\.launch/.test(blob);
       const webhook = /setWebhook|run_webhook|FastAPI|Flask|express\(|createServer/.test(blob);
       const mode = webhook && !polling ? 'webhook' : polling ? 'polling' : 'long-running';
-      const STARTS = { python: `python ${entry || 'bot.py'}`, node: `node ${entry || 'index.js'}`, deno: `deno run --allow-all ${entry || 'index.ts'}`, ruby: `ruby ${entry || 'bot.rb'}`, php: `php ${entry || 'index.php'}`, go: 'go run .', rust: 'cargo run --release', java: 'java -jar app.jar', dotnet: 'dotnet run', bash: `bash ${entry || 'start.sh'}`, perl: `perl ${entry || 'bot.pl'}`, lua: `lua ${entry || 'bot.lua'}` };
+      const javaStart = endswith('.jar') ? `java -jar ${names.find((n) => n.toLowerCase().endsWith('.jar')) || 'bot.jar'}` : top.includes('pom.xml') ? 'java -jar target/app.jar' : `java ${entry || 'Main.java'}`;
+      const javaInstall = top.includes('pom.xml') ? 'mvn -q -DskipTests package' : (top.includes('build.gradle') || top.includes('build.gradle.kts')) ? 'gradle -q build -x test' : '';
+      const FW2 = [['Java TelegramBots', /org\.telegram\.telegrambots/], ['Telegram.Bot (.NET)', /Telegram\.Bot/]];
+      const framework2 = (FW2.find(([, re]) => re.test(blob)) || [null])[0];
+      const STARTS = { python: `python ${entry || 'bot.py'}`, node: `node ${entry || 'index.js'}`, deno: `deno run --allow-all ${entry || 'index.ts'}`, ruby: `ruby ${entry || 'bot.rb'}`, php: `php ${entry || 'index.php'}`, go: 'go run .', rust: 'cargo run --release', java: javaStart, dotnet: 'dotnet run', bash: `bash ${entry || 'start.sh'}`, perl: `perl ${entry || 'bot.pl'}`, lua: `lua ${entry || 'bot.lua'}` };
       const warnings = [];
       if (/\b\d{6,12}:[A-Za-z0-9_-]{30,}\b/.test(blob)) warnings.push('A bot-token-looking string is hardcoded in code — move it to BOT_TOKEN env var.');
       if (!entry) warnings.push('No clear entry file found — set a custom start command.');
       if (!/BOT_TOKEN|process\.env|environ|getenv/.test(blob)) warnings.push('No BOT_TOKEN env usage detected.');
-      const IMG = { python: 'python:3.12-slim', node: 'node:20-slim', deno: 'denoland/deno:1.46', ruby: 'ruby:3.3-slim', php: 'php:8.3-cli', go: 'golang:1.22-alpine', rust: 'rust:1.80-slim', bash: 'ubuntu:24.04' };
+      const IMG = { python: 'python:3.12-slim', node: 'node:20-slim', deno: 'denoland/deno:1.46', ruby: 'ruby:3.3-slim', php: 'php:8.3-cli', go: 'golang:1.22-alpine', rust: 'rust:1.80-slim', java: 'maven:3.9-eclipse-temurin-21', dotnet: 'mcr.microsoft.com/dotnet/runtime:8.0', bash: 'ubuntu:24.04' };
       const start = String(req.body.start_command || STARTS[runtime] || '').slice(0, 300);
-      const report = { runtime, language: runtime, entry, framework, dependencies: [], manifests: names.filter((n) => /requirements\.txt|package\.json|go\.mod|Cargo\.toml|Gemfile|composer\.json|deno\.json/.test(n)), mode, file_count: files.length, total_bytes: blob.length, warnings, readiness: Math.max(5, Math.min(100, 40 + (entry ? 20 : 0) + (framework ? 15 : 0) + 15 - warnings.length * 5)), compatibility: { full_panel: true, docker_vps: true, vercel_webhook: ['python', 'node'].includes(runtime) && mode === 'webhook', vercel_reason: 'Webhook-ready Python/Node' }, commands: { install: runtime === 'python' ? 'pip install -r requirements.txt' : runtime === 'node' ? 'npm install' : '', start }, generated: { Dockerfile: `FROM ${IMG[runtime] || 'ubuntu:24.04'}\nWORKDIR /app\nCOPY . .\nCMD ["sh","-c","${start}"]\n`, Procfile: `worker: ${start}\n`, manifest: { runtime, entry, framework, start, mode } } };
+      const install = runtime === 'java' ? javaInstall : runtime === 'python' ? 'pip install -r requirements.txt' : runtime === 'node' ? 'npm install' : runtime === 'rust' ? 'cargo build --release' : runtime === 'go' ? 'go mod download' : '';
+      const report = { runtime, language: runtime, entry, framework: framework || framework2, dependencies: [], manifests: names.filter((n) => /requirements\.txt|package\.json|go\.mod|Cargo\.toml|Gemfile|composer\.json|deno\.json|pom\.xml|build\.gradle|\.csproj/.test(n)), mode, file_count: files.length, total_bytes: blob.length, warnings, readiness: Math.max(5, Math.min(100, 40 + (entry ? 20 : 0) + ((framework || framework2) ? 15 : 0) + 15 - warnings.length * 5)), compatibility: { full_panel: true, docker_vps: true, vercel_webhook: ['python', 'node'].includes(runtime) && mode === 'webhook', vercel_reason: 'Webhook-ready Python/Node' }, commands: { install, start }, generated: { Dockerfile: `FROM ${IMG[runtime] || 'ubuntu:24.04'}\nWORKDIR /app\nCOPY . .\n${install ? `RUN ${install}\n` : ''}CMD ["sh","-c","${start}"]\n`, Procfile: `worker: ${start}\n`, manifest: { runtime, entry, framework: framework || framework2, start, install, mode } } };
       adminAuditLog(s.u, 'analyze_project', `${runtime} files=${files.length}`);
       return res.json({ ok: true, report });
     }

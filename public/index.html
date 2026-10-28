@@ -402,17 +402,32 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
         <div class="card mt"><b style="color:#fff">☁️ My Hosted Bots</b><span style="color:var(--mut);font-size:12.5px"> — live status is verified against Telegram</span>
           <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Personality</th><th>Status</th><th>Webhook</th><th>Actions</th></tr></thead><tbody id="xhBots"></tbody></table></div>
         </div>
+        <div class="card mt"><b style="color:#fff">🌍 Host Code Bots — Python · Java · Node & more</b>
+          <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Already have bot <i>code</i> (not just a token)? Host full projects in almost any language — files, folders & ZIPs with auto language detection, dependency install and 24/7 process supervision.</p>
+          <div class="flex mt">
+            <button class="btn small" onclick="gotoTab('code');xcLangHost('python')">🐍 Host Python</button>
+            <button class="btn small" onclick="gotoTab('code');xcLangHost('java')">☕ Host Java</button>
+            <button class="btn small" onclick="gotoTab('code');xcLangHost('node')">🟢 Host Node.js</button>
+            <button class="btn small ghost" onclick="gotoTab('code')">🌍 All Languages →</button>
+          </div>
+        </div>
       </div>
 
       <div data-xpane="code" class="hide">
         <div class="xp-grid" id="xcStats"></div>
+        <div class="card" style="margin-bottom:16px"><b style="color:#fff">🌍 Multi-Language Hosting Hub</b>
+          <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Host Telegram bots written in <b style="color:#fff">Python, Java, Node.js</b> and more. Pick a language to load a production sample, auto-analyze it, then deploy — webhook-ready Python/Node can also go serverless, everything else runs 24/7 on the Full Panel / Docker process host.</p>
+          <div id="xcLangHub" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px"></div>
+          <div class="flex mt"><button class="btn small ghost" onclick="xcCheckPanelLangs()">🔎 Check which languages my Full Panel has installed</button></div>
+          <div id="xcLangOut" class="mt" style="font-size:13px;color:var(--mut);line-height:1.8">Panel runtime check: set a Full Panel URL below, then check — it reports Python, Java, Node, Go… versions actually installed on that host.</div>
+        </div>
         <div class="xp-2col">
           <div class="card"><b style="color:#fff">🗂️ Project Files — any language</b>
             <label>Project name</label><input id="xcName" placeholder="my-awesome-bot">
             <div class="flex mt">
               <label class="btn small" style="cursor:pointer">📁 Add Files<input type="file" id="xcFiles" multiple hidden></label>
               <label class="btn small ghost" style="cursor:pointer">🗂 Add Folder<input type="file" id="xcFolder" webkitdirectory hidden></label>
-              <select id="xcSample" style="width:auto"><option value="">✨ Load sample…</option><option value="python">🐍 Python (PTB)</option><option value="node">🟢 Node (Telegraf)</option><option value="go">🔵 Go</option><option value="php">🐘 PHP</option><option value="ruby">💎 Ruby</option><option value="bash">🐚 Bash</option></select>
+              <select id="xcSample" style="width:auto"><option value="">✨ Load sample…</option><option value="python">🐍 Python (PTB)</option><option value="node">🟢 Node (Telegraf)</option><option value="java">☕ Java (TelegramBots)</option><option value="go">🔵 Go</option><option value="rust">🦀 Rust (Teloxide)</option><option value="dotnet">🟣 C# / .NET</option><option value="php">🐘 PHP</option><option value="ruby">💎 Ruby</option><option value="bash">🐚 Bash</option></select>
             </div>
             <div id="xcDrop" class="dropzone">⬇️ Drag &amp; drop bot files here — .py .js .go .rb .php .java .rs .sh … any language</div>
             <div id="xcFileList" class="filelist"></div>
@@ -1008,7 +1023,10 @@ node:{'index.js':"const { Telegraf } = require('telegraf');\nconst bot = new Tel
 go:{'main.go':"package main\n\nimport (\n  \"log\"\n  \"os\"\n  tgbotapi \"github.com/go-telegram-bot-api/telegram-bot-api/v5\"\n)\n\nfunc main(){\n  bot, err := tgbotapi.NewBotAPI(os.Getenv(\"BOT_TOKEN\"))\n  if err != nil { log.Panic(err) }\n  u := tgbotapi.NewUpdate(0)\n  for update := range bot.GetUpdatesChan(u) {\n    if update.Message != nil { bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)) }\n  }\n}\n",'go.mod':'module mybot\n\ngo 1.22\n\nrequire github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1\n'},
 php:{'index.php':"<?php\nrequire 'vendor/autoload.php';\nuse Telegram\\Bot\\Api;\n$telegram = new Api(getenv('BOT_TOKEN'));\n$updates = $telegram->getUpdates();\nforeach ($updates as $u) {\n  $msg = $u->getMessage();\n  if ($msg) $telegram->sendMessage(['chat_id' => $msg->getChat()->getId(), 'text' => $msg->getText()]);\n}\n",'composer.json':'{"require": {"irazasyed/telegram-bot-sdk": "^3.0"}}\n'},
 ruby:{'bot.rb':"require 'telegram/bot'\nTelegram::Bot::Client.run(ENV['BOT_TOKEN']) do |bot|\n  bot.listen do |msg|\n    bot.api.send_message(chat_id: msg.chat.id, text: msg.text)\n  end\nend\n",'Gemfile':"source 'https://rubygems.org'\ngem 'telegram-bot-ruby'\n"},
-bash:{'bot.sh':"#!/bin/bash\n# Minimal Telegram echo loop (curl + jq required)\nTOKEN=\"$BOT_TOKEN\"\nAPI=\"https://api.telegram.org/bot$TOKEN\"\nOFFSET=0\nwhile true; do\n  UPD=$(curl -s \"$API/getUpdates?offset=$OFFSET&timeout=20\")\n  echo \"$UPD\" | grep -o '\"text\":\"[^\"]*\"' | head -1\n  sleep 2\ndone\n"}};
+bash:{'bot.sh':"#!/bin/bash\n# Minimal Telegram echo loop (curl + jq required)\nTOKEN=\"$BOT_TOKEN\"\nAPI=\"https://api.telegram.org/bot$TOKEN\"\nOFFSET=0\nwhile true; do\n  UPD=$(curl -s \"$API/getUpdates?offset=$OFFSET&timeout=20\")\n  echo \"$UPD\" | grep -o '\"text\":\"[^\"]*\"' | head -1\n  sleep 2\ndone\n"},
+java:{'src/main/java/com/example/Main.java':"package com.example;\n\nimport org.telegram.telegrambots.bots.TelegramLongPollingBot;\nimport org.telegram.telegrambots.meta.TelegramBotsApi;\nimport org.telegram.telegrambots.meta.api.methods.send.SendMessage;\nimport org.telegram.telegrambots.meta.api.objects.Update;\nimport org.telegram.telegrambots.meta.exceptions.TelegramApiException;\nimport org.telegram.telegrambots.updatesreceivers.DefaultBotSession;\n\npublic class Main extends TelegramLongPollingBot {\n    @Override public String getBotUsername() { return \"java_bot\"; }\n    @Override public String getBotToken() { return System.getenv(\"BOT_TOKEN\"); }\n    @Override public void onUpdateReceived(Update u) {\n        if (u.hasMessage() && u.getMessage().hasText()) {\n            long chat = u.getMessage().getChatId();\n            String text = u.getMessage().getText();\n            String reply = \"/start\".equals(text) ? \"👋 Java bot online!\" : \"🔁 \" + text;\n            try { execute(new SendMessage(String.valueOf(chat), reply)); }\n            catch (TelegramApiException e) { e.printStackTrace(); }\n        }\n    }\n    public static void main(String[] args) throws Exception {\n        new TelegramBotsApi(DefaultBotSession.class).registerBot(new Main());\n        System.out.println(\"Java Telegram bot running (long polling)\");\n    }\n}\n",'pom.xml':"<project xmlns=\"http://maven.apache.org/POM/4.0.0\"><modelVersion>4.0.0</modelVersion>\n<groupId>com.example</groupId><artifactId>telegram-bot</artifactId><version>1.0</version>\n<properties><maven.compiler.source>21</maven.compiler.source><maven.compiler.target>21</maven.compiler.target></properties>\n<dependencies><dependency><groupId>org.telegram</groupId><artifactId>telegrambots</artifactId><version>6.9.7.1</version></dependency></dependencies>\n<build><finalName>app</finalName><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-shade-plugin</artifactId><version>3.5.1</version><executions><execution><phase>package</phase><goals><goal>shade</goal></goals><configuration><transformers><transformer implementation=\"org.apache.maven.plugins.shade.resource.ManifestResourceTransformer\"><mainClass>com.example.Main</mainClass></transformer></transformers></configuration></execution></executions></plugin></plugins></build></project>\n"},
+rust:{'src/main.rs':"use teloxide::prelude::*;\n\n#[tokio::main]\nasync fn main() {\n    let bot = Bot::from_env();\n    teloxide::repl(bot, |bot: Bot, msg: Message| async move {\n        let text = msg.text().unwrap_or(\"\");\n        let reply = if text == \"/start\" { \"👋 Rust bot online!\".to_string() } else { format!(\"🔁 {}\", text) };\n        bot.send_message(msg.chat.id, reply).await?;\n        respond(())\n    }).await;\n}\n",'Cargo.toml':"[package]\nname = \"telegram-bot\"\nversion = \"0.1.0\"\nedition = \"2021\"\n\n[dependencies]\nteloxide = \"0.12\"\ntokio = { version = \"1\", features = [\"full\"] }\n"},
+dotnet:{'Program.cs':"using Telegram.Bot;\nusing Telegram.Bot.Polling;\nusing Telegram.Bot.Types;\n\nvar token = Environment.GetEnvironmentVariable(\"BOT_TOKEN\")!;\nvar bot = new TelegramBotClient(token);\nusing var cts = new CancellationTokenSource();\nbot.StartReceiving(async (b, u, ct) => {\n    if (u.Message?.Text is { } text)\n        await b.SendTextMessageAsync(u.Message.Chat.Id, text == \"/start\" ? \"👋 C# bot online!\" : \"🔁 \" + text, cancellationToken: ct);\n}, (b, e, ct) => Task.CompletedTask, new ReceiverOptions(), cts.Token);\nConsole.WriteLine(\"C# Telegram bot running (long polling)\");\nawait Task.Delay(-1);\n",'Bot.csproj':"<Project Sdk=\"Microsoft.NET.Sdk\">\n<PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework><Nullable>enable</Nullable></PropertyGroup>\n<ItemGroup><PackageReference Include=\"Telegram.Bot\" Version=\"19.0.0\" /></ItemGroup>\n</Project>\n"}};
 const LANG_ICON={'py':'🐍','js':'🟢','mjs':'🟢','ts':'🔷','go':'🔵','rb':'💎','php':'🐘','java':'☕','rs':'🦀','sh':'🐚','pl':'🐪','lua':'🌙','cs':'🟣','json':'🧾','txt':'📄','md':'📘','toml':'⚙️','yaml':'⚙️','yml':'⚙️'};
 function xcSyncEditor(){if(xcActive){const f=xcFilesArr.find(x=>x.path===xcActive);if(f)f.content=$('#xcEditor').value}}
 function xcRenderFiles(){
@@ -1033,7 +1051,35 @@ const dz=$('#xcDrop');
 ['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));
 ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));
 dz.addEventListener('drop',e=>xcReadFiles(e.dataTransfer.files));
-$('#xcSample').addEventListener('change',e=>{const s=XC_SAMPLES[e.target.value];if(!s)return;Object.entries(s).forEach(([p,c])=>xcUpsert(p,c));xcOpen(Object.keys(s)[0]);toast('✨ Sample loaded: '+e.target.value)});
+window.xcLoadSample=k=>{const s=XC_SAMPLES[k];if(!s){toast('No sample for '+k);return}Object.entries(s).forEach(([p,c])=>xcUpsert(p,c));xcOpen(Object.keys(s)[0]);xcReport=null;$('#xcReport').textContent='Sample loaded: '+k+' — press 🔍 Analyze Project, then 🚀 Deploy.';toast('✨ Sample loaded: '+k)};
+$('#xcSample').addEventListener('change',e=>{if(e.target.value)xcLoadSample(e.target.value)});
+/* ---- multi-language hosting hub ---- */
+const XC_LANGS=[
+ {k:'python',icon:'🐍',name:'Python',fw:'python-telegram-bot · aiogram',host:'⚡ Webhook + 🖥 Process',col:'#4ea1ff'},
+ {k:'node',icon:'🟢',name:'Node.js',fw:'Telegraf · grammY',host:'⚡ Webhook + 🖥 Process',col:'#7ed957'},
+ {k:'java',icon:'☕',name:'Java',fw:'TelegramBots · Maven/Gradle · JAR',host:'🖥 Process + 🐳 Docker',col:'#ff9f43'},
+ {k:'go',icon:'🔵',name:'Go',fw:'go-telegram-bot-api',host:'🖥 Process + 🐳 Docker',col:'#5ad1e6'},
+ {k:'rust',icon:'🦀',name:'Rust',fw:'Teloxide',host:'🖥 Process + 🐳 Docker',col:'#f0a06a'},
+ {k:'dotnet',icon:'🟣',name:'C# / .NET',fw:'Telegram.Bot',host:'🖥 Process + 🐳 Docker',col:'#9b8cff'},
+ {k:'php',icon:'🐘',name:'PHP',fw:'Telegram Bot SDK',host:'🖥 Process + 🐳 Docker',col:'#a78bfa'},
+ {k:'ruby',icon:'💎',name:'Ruby',fw:'telegram-bot-ruby',host:'🖥 Process + 🐳 Docker',col:'#ff6b6b'},
+ {k:'bash',icon:'🐚',name:'Bash',fw:'curl + Bot API',host:'🖥 Process + 🐳 Docker',col:'#98d982'}];
+function xcRenderHub(){
+  const el=$('#xcLangHub'); if(!el)return;
+  el.innerHTML=XC_LANGS.map(l=>'<div class="langcard" style="border:1px solid var(--line);border-radius:14px;padding:12px;background:#040a18"><div style="font-size:22px">'+l.icon+'</div><b style="color:#fff">'+l.name+'</b><div style="font-size:11.5px;color:var(--mut);line-height:1.5;min-height:34px">'+l.fw+'</div><span class="chip" style="border-color:'+l.col+'">'+l.host+'</span><div class="flex" style="margin-top:9px"><button class="btn small" onclick="xcLangHost(\''+l.k+'\')">🚀 Host '+l.name+'</button></div></div>').join('');
+}
+window.xcLangHost=k=>{xcLoadSample(k);setTimeout(()=>{const b=$('#xcAnalyze'); if(b)b.click()},200);window.scrollTo({top:0,behavior:'smooth'})};
+window.xcCheckPanelLangs=async()=>{
+  const out=$('#xcLangOut'); const url=($('#xcPanelUrl').value||'').trim().replace(/\/+$/,'');
+  if(!url){out.textContent='Set your Full Panel URL (Host This Project card) first — e.g. http://localhost:3000 or your VPS panel. Then I can check which language runtimes are installed there.';return}
+  out.textContent='⏳ Asking '+url+' which runtimes it has installed…';
+  try{
+    const r=await fetch(url+'/api/meta'); const d=await r.json();
+    const rt=d.runtimes||{};
+    out.innerHTML=Object.entries(rt).map(([k,v])=>'<span class="chip" title="'+esc(v.version||'not installed')+'">'+esc(v.label||k)+': '+(v.version?'✅ '+esc(String(v.version).slice(0,34)):'❌ not installed')+'</span>').join(' ')||'Panel answered but returned no runtime info.';
+  }catch(e){out.textContent='❌ Could not reach the panel ('+e.message+'). Check the URL is running & reachable from this browser.'}
+};
+xcRenderHub();
 $('#xcAddFile').onclick=()=>{const p=$('#xcNewPath').value.trim();if(!p){toast('Type a file path first');return}xcUpsert(p,$('#xcEditor').value&&xcActive===p?$('#xcEditor').value:'');xcActive=p;$('#xcActiveName').textContent=p;$('#xcEditor').value=(xcFilesArr.find(f=>f.path===p)||{}).content||'';$('#xcNewPath').value='';xcRenderFiles()};
 $('#xcDelFile').onclick=()=>{if(!xcActive){toast('Select a file first');return}xcFilesArr=xcFilesArr.filter(f=>f.path!==xcActive);xcActive=xcFilesArr[0]?xcFilesArr[0].path:null;$('#xcEditor').value=xcActive?(xcFilesArr[0].content):'';$('#xcActiveName').textContent=xcActive||'—';xcRenderFiles()};
 $('#xcEditor').addEventListener('input',()=>{xcSyncEditor();xcRenderFilesSoft()});
