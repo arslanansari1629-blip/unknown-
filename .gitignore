@@ -1,0 +1,16 @@
+# runtime data (bot files, env secrets, logs)
+data/
+*.log
+
+# dependencies
+node_modules/
+
+# local env
+.env
+.env.*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
