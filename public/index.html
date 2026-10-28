@@ -89,6 +89,26 @@ footer{border-top:1px solid var(--line);margin-top:70px;padding:30px 0 44px;colo
 .tgl input:checked+i{background:#14532d}.tgl input:checked+i:after{left:25px;background:var(--grn)}
 .xrow{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:12px 0;border-bottom:1px solid #141f3d;font-size:14px}
 pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padding:14px;font-size:12px;overflow:auto;max-height:300px;white-space:pre-wrap;color:#b9cdf5}
+/* console v3 */
+.xp-shell{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+.xp-side{background:#070d20;border-right:1px solid var(--line);padding:20px 14px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.xp-brand{font-weight:900;color:#fff;font-size:16px;padding:4px 8px 14px}
+.xp-user{display:flex;flex-direction:column;gap:2px;font-size:12.5px;color:var(--mut);padding:0 8px 14px}.xp-user .dot{display:inline-block;margin-right:5px}
+.xp-nav{text-align:left;border:1px solid transparent;background:transparent;color:var(--mut);padding:11px 13px;border-radius:11px;cursor:pointer;font-size:14px;font-weight:700;font-family:inherit}
+.xp-nav:hover{color:#fff;background:#0e1834}.xp-nav.on{color:#fff;background:#10254a;border-color:var(--blue)}
+.xp-side-foot{margin-top:auto}
+.xp-main{padding:22px;max-width:1180px;width:100%;margin:0 auto}
+.xp-topbar{display:flex;gap:12px;align-items:center;margin-bottom:20px}.xp-topbar input{flex:1}
+.xp-2col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+@media(max-width:960px){.xp-2col{grid-template-columns:1fr}.xp-shell{grid-template-columns:1fr}.xp-side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center}.xp-side-foot{display:flex;gap:8px;margin:0}.xp-side-foot .btn{width:auto!important;margin:0!important}.xp-user{padding:0}}
+.xp-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.chart{width:100%;height:180px;display:block;margin-top:12px}.chart.tall{height:230px}
+.bar{background:#14224a;border-radius:99px;height:9px;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--vio));border-radius:99px}
+.audit-feed{font-size:13px;color:var(--mut);line-height:1.7;max-height:300px;overflow:auto}
+.audit-item{display:flex;gap:9px;flex-wrap:wrap;padding:7px 0;border-bottom:1px solid #141f3d}.audit-item b{color:#fff}.audit-item em{opacity:.75}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
+.preview{background:#070d20;border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}.preview h3{color:#fff;font-size:23px;margin:12px 0 8px}.preview p{color:var(--mut);font-size:14px;line-height:1.6;max-width:560px;margin:0 auto 12px}
+.pal-item{display:block;width:100%;text-align:left;background:#0b1226;border:1px solid var(--line);color:var(--txt);padding:12px 14px;border-radius:11px;margin-bottom:8px;cursor:pointer;font-size:14px;font-family:inherit}.pal-item:hover{border-color:var(--blue);background:#10254a}
 </style>
 </head>
 <body>
@@ -106,8 +126,8 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 
 <header class="hero wrap">
   <span class="pill">🐍 Python 3.12 · ☁️ Vercel Serverless · 🤖 Telegram Bot API</span>
-  <h1>Host Python Telegram Bots<br><span class="g">24/7. In Seconds. Free.</span></h1>
-  <p>Paste your bot token, press deploy — your Python bot goes live on global serverless webhooks. No VPS, no polling, no credit card. python-telegram-bot, aiogram, Telethon &amp; raw Bot API supported.</p>
+  <h1 id="heroTitle">Host Python Telegram Bots<br><span class="g">24/7. In Seconds. Free.</span></h1>
+  <p id="heroSub">Paste your bot token, press deploy — your Python bot goes live on global serverless webhooks. No VPS, no polling, no credit card. python-telegram-bot, aiogram, Telethon &amp; raw Bot API supported.</p>
   <div class="flex" style="justify-content:center">
     <a class="btn" href="#deploy">🚀 Deploy My Bot</a>
     <a class="btn ghost" href="#templates">📚 View Templates</a>
@@ -246,7 +266,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 </section>
 
 <footer class="wrap">
-  ⚡ <b style="color:#fff">PyTeleHost Ultra</b> — Python Telegram Bot Hosting · Built by <b style="color:#fff">editz900s</b><br>
+  ⚡ <b style="color:#fff" id="footBrand">PyTeleHost Ultra</b> — <span id="footText">Python Telegram Bot Hosting · Built by <b style="color:#fff">editz900s</b></span><br>
   Python serverless on Vercel · Full polling panel in this repo (<span class="kbd">server.js</span>) · MIT Licensed
 </footer>
 
@@ -268,78 +288,162 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 </div>
 
 <div id="xPanel" class="hide">
-  <div class="xp-head"><div class="wrap flex" style="justify-content:space-between">
-    <b style="color:#fff;font-size:17px">🛡️ Control Console <span class="tag live" id="xWho"></span></b>
-    <span class="flex"><span style="color:var(--mut);font-size:12.5px" id="xExpiry"></span>
-    <button class="btn small ghost" id="xRefresh">↻ Refresh</button>
-    <button class="btn small danger" id="xLogout">Logout</button></span>
-  </div></div>
-  <div class="wrap" style="padding-bottom:60px">
-    <div class="xp-tabs">
-      <button class="xp-tab on" data-xtab="overview">📊 Overview</button>
-      <button class="xp-tab" data-xtab="bots">🤖 Bots</button>
-      <button class="xp-tab" data-xtab="webhook">🔗 Webhook Control</button>
-      <button class="xp-tab" data-xtab="site">🎛️ Site Control</button>
-      <button class="xp-tab" data-xtab="system">⚠️ System</button>
-    </div>
+  <div class="xp-shell">
+    <aside class="xp-side">
+      <div class="xp-brand">🛡️ <span>Command Center</span></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small></div>
+      <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
+      <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
+      <button class="xp-nav" data-xtab="telegram">✈️ Telegram Lab</button>
+      <button class="xp-nav" data-xtab="analytics">📈 Analytics</button>
+      <button class="xp-nav" data-xtab="site">🎛️ Site Builder</button>
+      <button class="xp-nav" data-xtab="system">⚙️ System</button>
+      <div class="xp-side-foot">
+        <button class="btn small ghost" id="xPaletteBtn" style="width:100%;justify-content:center">⌘K Command Palette</button>
+        <button class="btn small ghost mt" id="xRefresh" style="width:100%;justify-content:center">↻ Refresh Data</button>
+        <button class="btn small danger mt" id="xLogout" style="width:100%;justify-content:center">Logout</button>
+      </div>
+    </aside>
 
-    <div data-xpane="overview">
-      <div class="xp-grid" id="xStats"></div>
-      <div class="card mt"><b style="color:#fff">Platform</b><pre class="json mt" id="xPlatform">…</pre></div>
-      <div class="card mt"><b style="color:#fff">🧾 Audit Log</b><div id="xAudit" class="mt" style="font-size:13px;color:var(--mut);line-height:1.9">—</div></div>
-    </div>
+    <main class="xp-main">
+      <div class="xp-topbar">
+        <input id="xSearch" placeholder="🔎 Search bots, actions…  (Ctrl+K for palette)">
+        <span class="tag live" id="xLiveTag">● LIVE SYNC</span>
+        <span style="color:var(--mut);font-size:12px" id="xUpdated"></span>
+      </div>
 
-    <div data-xpane="bots" class="hide">
-      <div class="card"><b style="color:#fff">☁️ Server Registry</b><span style="color:var(--mut);font-size:12.5px"> (this serverless instance)</span>
-        <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th>Status</th><th></th></tr></thead><tbody id="xServerBots"></tbody></table></div></div>
-      <div class="card mt"><b style="color:#fff">💻 This Browser's Bots</b>
-        <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th></th></tr></thead><tbody id="xLocalBots"></tbody></table></div></div>
-    </div>
-
-    <div data-xpane="webhook" class="hide">
-      <div class="card"><b style="color:#fff">🔗 Control any bot by token</b>
-        <label>Bot token</label><input id="xwToken" type="password" placeholder="123456789:AA…">
-        <label>Custom webhook URL (blank = this site's built-in Python brain)</label><input id="xwUrl" placeholder="https://…">
-        <div class="flex mt">
-          <button class="btn small" id="xwValidate">🔍 Validate</button>
-          <button class="btn small ghost" id="xwInfo">ℹ️ Webhook Info</button>
-          <button class="btn small" id="xwSet">✅ Set Webhook</button>
-          <button class="btn small danger" id="xwDelete">🗑 Delete Webhook</button>
+      <div data-xpane="overview">
+        <div class="xp-grid" id="xStats"></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">📈 Traffic — last 14 days</b><canvas id="chTraffic" class="chart"></canvas>
+          <div class="flex" style="font-size:12px;color:var(--mut)"><span>💬 Messages</span><span>🚀 Deploys</span><span>❌ Errors</span></div></div>
+          <div class="card"><b style="color:#fff">🧩 Framework Mix</b><canvas id="chFw" class="chart"></canvas><div id="fwLegend" style="font-size:12.5px;color:var(--mut);line-height:1.9"></div></div>
         </div>
-        <pre class="json mt" id="xwOut">Results appear here…</pre>
-      </div>
-    </div>
-
-    <div data-xpane="site" class="hide">
-      <div class="card"><b style="color:#fff">🎛️ Site Control</b><p style="color:var(--mut);font-size:13px;margin-top:6px;line-height:1.6">Applied instantly in this browser and pushed to the live platform flags. Maintenance mode blocks new deployments for visitors.</p>
-        <div class="xrow"><span>🛠 Maintenance mode</span><label class="tgl"><input type="checkbox" id="xfMaintenance"><i></i></label></div>
-        <div class="xrow"><span>📝 Registrations / deployments open</span><label class="tgl"><input type="checkbox" id="xfReg"><i></i></label></div>
-        <div class="xrow"><span>📚 Show Templates section</span><label class="tgl"><input type="checkbox" id="xfTpl"><i></i></label></div>
-        <div class="xrow"><span>💎 Show Pricing section</span><label class="tgl"><input type="checkbox" id="xfPricing"><i></i></label></div>
-        <div class="xrow"><span>❓ Show FAQ section</span><label class="tgl"><input type="checkbox" id="xfFaq"><i></i></label></div>
-        <label>Announcement banner (blank = hidden)</label><input id="xfAnnounce" placeholder="Scheduled maintenance Sunday 02:00 UTC…">
-        <label>Site title override (blank = default)</label><input id="xfTitle" placeholder="PyTeleHost Ultra">
-        <div class="row">
-          <div><label>Default framework</label><select id="xfFramework"><option value="">(default)</option><option>python-telegram-bot</option><option>aiogram 3</option><option>Telethon</option><option>Pyrogram</option><option>Raw Bot API (webhook)</option></select></div>
-          <div><label>Default region</label><select id="xfRegion"><option value="">(default)</option><option value="iad1">Washington (iad1)</option><option value="sin1">Singapore (sin1)</option><option value="fra1">Frankfurt (fra1)</option><option value="bom1">Mumbai (bom1)</option></select></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">⚡ Quick Actions</b><div class="xp-actions">
+            <button class="btn small" data-q="goto:telegram">✈️ Telegram Lab</button>
+            <button class="btn small ghost" data-q="health">🩺 Run Health Check</button>
+            <button class="btn small ghost" data-q="maintenance">🛠 Toggle Maintenance</button>
+            <button class="btn small ghost" data-q="export">⬇️ Export State</button>
+            <button class="btn small ghost" data-q="goto:site">🎛️ Site Builder</button>
+            <button class="btn small ghost" data-q="goto:bots">🤖 Add Bot</button>
+          </div><pre class="json mt" id="xHealthOut">Health checks appear here…</pre></div>
+          <div class="card"><b style="color:#fff">🖥 Platform</b><pre class="json mt" id="xPlatform">…</pre></div>
         </div>
-        <div class="flex mt"><button class="btn" id="xfSave">💾 Save &amp; Apply</button><button class="btn ghost" id="xfReset">Reset Defaults</button></div>
+        <div class="card mt"><b style="color:#fff">🧾 Live Activity / Audit</b><div id="xAudit" class="mt audit-feed">—</div></div>
       </div>
-    </div>
 
-    <div data-xpane="system" class="hide">
-      <div class="card"><b style="color:#fff">⚠️ Danger Zone</b>
-        <div class="xrow"><span>Remove every bot in the server registry</span><button class="btn small danger" id="xsClearRegistry">Clear Registry</button></div>
-        <div class="xrow"><span>Remove every bot saved in this browser</span><button class="btn small danger" id="xsClearLocal">Clear Local Bots</button></div>
-        <div class="xrow"><span>Clear the audit log</span><button class="btn small danger" id="xsClearAudit">Clear Audit</button></div>
-        <div class="xrow"><span>Export site configuration (JSON)</span><button class="btn small ghost" id="xsExport">Export</button></div>
-        <div class="xrow"><span>Import site configuration</span><span class="flex"><input type="file" id="xsImportFile" accept="application/json" style="width:230px"><button class="btn small ghost" id="xsImport">Import</button></span></div>
-        <pre class="json mt" id="xsOut">Session &amp; system output…</pre>
+      <div data-xpane="bots" class="hide">
+        <div class="card"><b style="color:#fff">➕ Add Managed Bot</b>
+          <div class="row"><div><label>Bot name</label><input id="xaName" placeholder="Support Bot"></div>
+          <div><label>Framework</label><select id="xaFramework"><option>python-telegram-bot</option><option>aiogram 3</option><option>Telethon</option><option>Pyrogram</option><option>Raw Bot API (webhook)</option></select></div></div>
+          <label>Bot token (validated live, never stored)</label><input id="xaToken" type="password" placeholder="123456789:AA…">
+          <label class="chk"><input type="checkbox" id="xaHook" checked> Also set its webhook to this platform immediately</label>
+          <button class="btn mt" id="xaAdd">🚀 Add Bot</button> <span id="xaOut" style="font-size:13px"></span>
+        </div>
+        <div class="card mt"><b style="color:#fff">🛡️ Console-Managed Bots</b>
+          <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th>Status</th><th></th></tr></thead><tbody id="xAdminBots"></tbody></table></div></div>
+        <div class="card mt"><b style="color:#fff">☁️ Server Registry</b><span style="color:var(--mut);font-size:12.5px"> (this serverless instance)</span>
+          <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th>Status</th><th></th></tr></thead><tbody id="xServerBots"></tbody></table></div></div>
+        <div class="card mt"><b style="color:#fff">💻 This Browser's Bots</b> <button class="btn small danger" id="xBulkLocal" style="float:right">Delete All</button>
+          <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th></th></tr></thead><tbody id="xLocalBots"></tbody></table></div></div>
       </div>
-    </div>
+
+      <div data-xpane="telegram" class="hide">
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🔗 Webhook Control — any bot</b>
+            <label>Bot token</label><input id="xwToken" type="password" placeholder="123456789:AA…">
+            <label>Custom webhook URL (blank = built-in Python brain)</label><input id="xwUrl" placeholder="https://…">
+            <div class="flex mt"><button class="btn small" id="xwValidate">🔍 Validate</button><button class="btn small ghost" id="xwInfo">ℹ️ Info</button><button class="btn small" id="xwSet">✅ Set</button><button class="btn small danger" id="xwDelete">🗑 Delete</button></div>
+          </div>
+          <div class="card"><b style="color:#fff">💬 Send Message as Bot</b>
+            <label>Chat ID</label><input id="xmChat" placeholder="123456789 or @channel">
+            <label>Message</label><textarea id="xmText" rows="3" placeholder="Hello from the console ⚡"></textarea>
+            <div class="flex mt"><select id="xmParse" style="width:auto"><option value="">plain</option><option>Markdown</option><option>HTML</option></select>
+            <button class="btn small" id="xmSend">📤 Send (uses token above)</button></div>
+          </div>
+        </div>
+        <div class="card mt"><b style="color:#fff">🧠 Webhook Brain Tester</b><p style="color:var(--mut);font-size:13px;margin-top:6px">Preview exactly what the hosted Python bot replies — no Telegram needed.</p>
+          <div class="flex mt"><select id="xtCmd" style="width:auto"><option>/start</option><option>/help</option><option>/ping</option><option>/id</option><option>/about</option><option>/echo Hello Ultra</option><option>custom</option></select>
+          <input id="xtCustom" placeholder="custom message…" style="flex:1" class="hide"><button class="btn small" id="xtRun">▶ Test</button></div>
+        </div>
+        <pre class="json mt" id="xwOut">Telegram results appear here…</pre>
+      </div>
+
+      <div data-xpane="analytics" class="hide">
+        <div class="xp-grid" id="xAnStats"></div>
+        <div class="card mt"><b style="color:#fff">💬 Messages vs Deploys</b><canvas id="chAn" class="chart tall"></canvas></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🌍 Regions</b><div id="xRegions" class="mt"></div></div>
+          <div class="card"><b style="color:#fff">⬇️ Export</b><p style="color:var(--mut);font-size:13px;line-height:1.7;margin-top:6px">Download the 14-day analytics series as CSV for Excel/Sheets.</p>
+          <button class="btn small mt" id="xCsv">📊 Download analytics.csv</button></div>
+        </div>
+      </div>
+
+      <div data-xpane="site" class="hide">
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🎛️ Live Site Control</b>
+            <div class="xrow"><span>🛠 Maintenance mode</span><label class="tgl"><input type="checkbox" id="xfMaintenance"><i></i></label></div>
+            <div class="xrow"><span>📝 Deployments open</span><label class="tgl"><input type="checkbox" id="xfReg"><i></i></label></div>
+            <div class="xrow"><span>🚀 Deploy engine enabled</span><label class="tgl"><input type="checkbox" id="xfDeploy"><i></i></label></div>
+            <div class="xrow"><span>📚 Templates section</span><label class="tgl"><input type="checkbox" id="xfTpl"><i></i></label></div>
+            <div class="xrow"><span>💎 Pricing section</span><label class="tgl"><input type="checkbox" id="xfPricing"><i></i></label></div>
+            <div class="xrow"><span>❓ FAQ section</span><label class="tgl"><input type="checkbox" id="xfFaq"><i></i></label></div>
+            <div class="xrow"><span>🧪 Playground section</span><label class="tgl"><input type="checkbox" id="xfPlay"><i></i></label></div>
+            <div class="xrow"><span>🤖 My Bots section</span><label class="tgl"><input type="checkbox" id="xfBotsSec"><i></i></label></div>
+            <label>Maintenance message</label><input id="xfMaintMsg" placeholder="Back in 10 minutes…">
+            <label>Max bots per user (blank = unlimited)</label><input id="xfMaxBots" placeholder="25">
+          </div>
+          <div class="card"><b style="color:#fff">✨ Brand & Content</b>
+            <label>Brand name</label><input id="xfBrand" placeholder="PyTeleHost Ultra">
+            <label>Site title (browser tab)</label><input id="xfTitle" placeholder="PyTeleHost Ultra — …">
+            <label>Hero headline (HTML allowed)</label><input id="xfHero" placeholder="Host Python Telegram Bots…">
+            <label>Hero subtitle</label><textarea id="xfHeroSub" rows="2"></textarea>
+            <label>Footer text</label><input id="xfFooter" placeholder="Python Telegram Bot Hosting">
+            <label>Support URL</label><input id="xfSupport" placeholder="https://t.me/…">
+            <label>Announcement banner (blank = hidden)</label><input id="xfAnnounce" placeholder="📢 Big update…">
+            <label>Accent theme</label><div class="flex" id="xfAccent">
+              <button type="button" class="swatch" data-accent="" style="background:linear-gradient(90deg,#229ed9,#7c5cff)"></button>
+              <button type="button" class="swatch" data-accent="violet" style="background:#7c5cff"></button>
+              <button type="button" class="swatch" data-accent="green" style="background:#2fd67a"></button>
+              <button type="button" class="swatch" data-accent="orange" style="background:#ff8a3d"></button>
+              <button type="button" class="swatch" data-accent="pink" style="background:#ff5da2"></button>
+            </div>
+            <div class="row"><div><label>Default framework</label><select id="xfFramework"><option value="">(default)</option><option>python-telegram-bot</option><option>aiogram 3</option><option>Telethon</option><option>Pyrogram</option><option>Raw Bot API (webhook)</option></select></div>
+            <div><label>Default region</label><select id="xfRegion"><option value="">(default)</option><option value="iad1">Washington</option><option value="sin1">Singapore</option><option value="fra1">Frankfurt</option><option value="bom1">Mumbai</option></select></div></div>
+          </div>
+        </div>
+        <div class="card mt"><b style="color:#fff">👀 Live Preview</b><div class="preview mt"><span class="pill">🐍 Python · ☁️ Serverless</span><h3 id="pvHero">Host Python Telegram Bots</h3><p id="pvSub">…</p><span class="tag live">Preview updates as you type</span></div>
+        <div class="flex mt"><button class="btn" id="xfSave">💾 Save & Apply Live</button><button class="btn ghost" id="xfReset">Reset Defaults</button></div></div>
+      </div>
+
+      <div data-xpane="system" class="hide">
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🩺 Endpoint Health</b><p style="color:var(--mut);font-size:13px;margin:8px 0">Probes every public API of this deployment from the server.</p>
+            <button class="btn small" id="xsHealth">▶ Run Health Check</button><pre class="json mt" id="xsHealthOut">Not run yet.</pre></div>
+          <div class="card"><b style="color:#fff">💾 State Backup</b>
+            <div class="xrow"><span>Export full state (flags, bots, audit)</span><button class="btn small ghost" id="xsExport">Export</button></div>
+            <div class="xrow"><span>Import state file</span><span class="flex"><input type="file" id="xsImportFile" accept="application/json" style="width:210px"><button class="btn small ghost" id="xsImport">Import</button></span></div>
+            <div class="xrow"><span>Export audit log (CSV)</span><button class="btn small ghost" id="xsAuditCsv">Export CSV</button></div>
+            <pre class="json mt" id="xsOut">Session & system output…</pre></div>
+        </div>
+        <div class="card mt"><b style="color:#ff8fa0">⚠️ Danger Zone</b>
+          <div class="xrow"><span>Remove every bot in the server registry</span><button class="btn small danger" id="xsClearRegistry">Clear Registry</button></div>
+          <div class="xrow"><span>Remove console-managed + browser bots</span><button class="btn small danger" id="xsClearLocal">Clear All Bots</button></div>
+          <div class="xrow"><span>Clear audit log</span><button class="btn small danger" id="xsClearAudit">Clear Audit</button></div>
+          <div class="xrow"><span>Wipe all console state on this instance</span><button class="btn small danger" id="xsWipe">Wipe State</button></div>
+        </div>
+      </div>
+
+    </main>
   </div>
 </div>
 
+<div id="xPalette" class="modal hide"><div class="box" style="width:560px">
+  <h3>⌘ Command Palette</h3><input id="xPalInput" placeholder="Type a command… (bots, health, maintenance, export, logout)">
+  <div id="xPalList" class="mt" style="max-height:320px;overflow:auto"></div>
+  <button class="btn ghost mt" id="xPalClose" style="width:100%;justify-content:center">Close (Esc)</button>
+</div></div>
 <script>
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
 const LS='pytelehost_bots_v1';
@@ -458,18 +562,24 @@ $('#btnCopyCode').onclick=()=>{navigator.clipboard.writeText($('#codeEd').value)
 $('#btnCopyReq').onclick=()=>{navigator.clipboard.writeText($('#reqEd').value);toast('📋 requirements.txt copied')};
 $('#btnDownload').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#codeEd').value],{type:'text/x-python'}));a.download='bot.py';a.click();toast('⬇️ bot.py downloaded')};
 
-/* ================= restricted console (hidden entry, server-side auth) ================= */
+/* ================= restricted console v3 (hidden entry, server-side auth) ================= */
 const XKEY='x_console_cfg_v1';
 let xCfg={}; try{xCfg=JSON.parse(localStorage.getItem(XKEY)||'{}')}catch(e){}
+const ACCENTS={'':['#2aabee','#7c5cff'],'violet':['#7c5cff','#b45cff'],'green':['#2fd67a','#1db9a5'],'orange':['#ff8a3d','#ff5d73'],'pink':['#ff5da2','#ff7ac8']};
 function applySiteCfg(c){
   if(!c||typeof c!=='object')return;
   const banner=$('#siteBanner');
   if(c.announcement){banner.textContent='📢 '+c.announcement;banner.classList.remove('hide')}else banner.classList.add('hide');
   if(c.site_title)document.title=c.site_title;
-  const blocked=c.maintenance||c.registrations_open===false;
-  const db=$('#btnDeploy'); if(db){db.disabled=!!blocked;db.textContent=blocked?'🛠 Temporarily Unavailable':'⚡ Deploy Bot Now'}
+  if(c.brand_name){$('#brandMark').innerHTML='⚡ '+esc(c.brand_name);const fb=$('#footBrand');if(fb)fb.textContent=c.brand_name}
+  if(c.hero_title)$('#heroTitle').innerHTML=c.hero_title;
+  if(c.hero_subtitle)$('#heroSub').textContent=c.hero_subtitle;
+  if(c.footer_text){const ft=$('#footText');if(ft)ft.textContent=c.footer_text}
+  const acc=ACCENTS[c.accent||'']||ACCENTS[''];document.documentElement.style.setProperty('--blue',acc[0]);document.documentElement.style.setProperty('--vio',acc[1]);
+  const blocked=c.maintenance||c.registrations_open===false||c.deploy_enabled===false;
+  const db=$('#btnDeploy'); if(db){db.disabled=!!blocked;db.textContent=c.maintenance?('🛠 '+(c.maintenance_message||'Under Maintenance')):blocked?'🛠 Temporarily Unavailable':'⚡ Deploy Bot Now'}
   const tog=(id,show)=>{const el=document.getElementById(id);if(el)el.classList.toggle('hide',show===false)};
-  tog('templates',c.show_templates); tog('pricing',c.show_pricing); tog('faq',c.show_faq);
+  tog('templates',c.show_templates); tog('pricing',c.show_pricing); tog('faq',c.show_faq); tog('playground',c.show_playground); tog('bots',c.show_bots_section);
   if(c.default_framework)$('#fFramework').value=c.default_framework;
   if(c.default_region&&$('#fRegion'))$('#fRegion').value=c.default_region;
 }
@@ -484,7 +594,11 @@ function openGate(){
 }
 if(location.hash==='#/console-900s')openGate();
 addEventListener('hashchange',()=>{if(location.hash==='#/console-900s')openGate()});
-addEventListener('keydown',e=>{if(e.ctrlKey&&e.shiftKey&&(e.key==='A'||e.key==='a')){e.preventDefault();openGate()}});
+addEventListener('keydown',e=>{
+  if(e.ctrlKey&&e.shiftKey&&(e.key==='A'||e.key==='a')){e.preventDefault();openGate()}
+  if((e.ctrlKey||e.metaKey)&&(e.key==='k'||e.key==='K')&&sessionStorage.getItem('x_console_token')){e.preventDefault();openPalette()}
+  if(e.key==='Escape'){$('#xPalette').classList.add('hide')}
+});
 let brandClicks=[]; $('#brandMark').addEventListener('click',()=>{const n=Date.now();brandClicks=brandClicks.filter(t=>n-t<2500);brandClicks.push(n);if(brandClicks.length>=5){brandClicks=[];openGate()}});
 $('#xGateClose').onclick=()=>$('#xGate').classList.add('hide');
 $('#xGate').addEventListener('click',e=>{if(e.target.id==='xGate')$('#xGate').classList.add('hide')});
@@ -506,69 +620,166 @@ $('#xLoginForm').onsubmit=async e=>{
   }catch(err){$('#xLoginErr').textContent='❌ '+err.message}
   btn.disabled=false; btn.textContent='Sign In';
 };
-function fmtExp(){const exp=+sessionStorage.getItem('x_console_exp')||0; if(!exp)return''; const s=exp-Math.floor(Date.now()/1000); if(s<=0)return'expired'; return 'session '+Math.floor(s/60)+'m left'}
+function fmtExp(){const exp=+sessionStorage.getItem('x_console_exp')||0; if(!exp)return''; const s=exp-Math.floor(Date.now()/1000); if(s<=0)return'expired'; return '⏳ '+Math.floor(s/60)+'m left'}
+let xTimer=null, xAnalytics=null, xAdminBots=[];
 function openPanel(){
   $('#xPanel').classList.remove('hide'); document.body.style.overflow='hidden';
-  $('#xWho').textContent='@'+(sessionStorage.getItem('x_console_user')||'operator');
-  $('#xExpiry').textContent=fmtExp(); loadOverview(); loadXBots();
+  $('#xWho').textContent=(sessionStorage.getItem('x_console_user')||'operator')+' · super-admin';
+  $('#xExpiry').textContent=fmtExp(); refreshAll();
+  clearInterval(xTimer); xTimer=setInterval(()=>{if(!$('#xPanel').classList.contains('hide')){refreshAll(true);$('#xExpiry').textContent=fmtExp()}},20000);
 }
 function xLogout(silent){
   sessionStorage.removeItem('x_console_token');sessionStorage.removeItem('x_console_exp');sessionStorage.removeItem('x_console_user');
-  $('#xPanel').classList.add('hide'); document.body.style.overflow=''; if(!silent)toast('Logged out');
+  clearInterval(xTimer); $('#xPanel').classList.add('hide'); document.body.style.overflow=''; if(!silent)toast('Logged out');
 }
 $('#xLogout').onclick=()=>xLogout(false);
-$('#xRefresh').onclick=()=>{loadOverview();loadXBots();$('#xExpiry').textContent=fmtExp()};
-setInterval(()=>{if(!$('#xPanel').classList.contains('hide'))$('#xExpiry').textContent=fmtExp()},30000);
-$$('.xp-tab').forEach(t=>t.onclick=()=>{$$('.xp-tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==t.dataset.xtab))});
+$('#xRefresh').onclick=()=>refreshAll();
+function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name));$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
+$$('.xp-nav').forEach(t=>t.onclick=()=>gotoTab(t.dataset.xtab));
 
-async function loadOverview(){
+/* ---------- charts (zero-dependency canvas) ---------- */
+function setupCanvas(cv){const dpr=window.devicePixelRatio||1;const w=cv.clientWidth||600,h=cv.clientHeight||180;cv.width=w*dpr;cv.height=h*dpr;const ctx=cv.getContext('2d');ctx.scale(dpr,dpr);return[ctx,w,h]}
+function drawLine(cv,data){
+  if(!cv||!data||!data.length)return; const[ctx,w,h]=setupCanvas(cv); const pad=26;
+  const series=[{k:'messages',c:'#2aabee',max:Math.max(...data.map(d=>d.messages))},{k:'deploys',c:'#2fd67a',max:Math.max(...data.map(d=>d.deploys))},{k:'errors',c:'#ff5d73',max:Math.max(...data.map(d=>d.errors))}];
+  ctx.strokeStyle='#1e2a4a';ctx.fillStyle='#8fa3c8';ctx.font='10px sans-serif';
+  series.forEach(s=>{ctx.beginPath();data.forEach((d,i)=>{const x=pad+i*(w-pad*2)/Math.max(1,data.length-1);const y=h-pad-(d[s.k]/s.max)*(h-pad*2);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.strokeStyle=s.c;ctx.lineWidth=2;ctx.stroke()});
+  data.forEach((d,i)=>{if(i%3===0||i===data.length-1){const x=pad+i*(w-pad*2)/Math.max(1,data.length-1);ctx.fillText(d.date.slice(5),x-12,h-6)}});
+}
+const FW_COLORS=['#2aabee','#7c5cff','#2fd67a','#ff8a3d','#ff5da2'];
+function drawDonut(cv,fws){
+  if(!cv||!fws)return; const[ctx,w,h]=setupCanvas(cv); const cx=w/2,cy=h/2,r=Math.min(w,h)/2-14; let a=-Math.PI/2;
+  fws.forEach((f,i)=>{const sw=f.share/100*Math.PI*2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+sw);ctx.closePath();ctx.fillStyle=FW_COLORS[i%5];ctx.fill();a+=sw});
+  ctx.beginPath();ctx.arc(cx,cy,r*.55,0,Math.PI*2);ctx.fillStyle='#0b1226';ctx.fill();
+  ctx.fillStyle='#fff';ctx.font='bold 13px sans-serif';ctx.textAlign='center';ctx.fillText('Frameworks',cx,cy+4);
+  $('#fwLegend').innerHTML=fws.map((f,i)=>'<span style="color:'+FW_COLORS[i%5]+'">●</span> '+esc(f.name)+' — '+f.share+'%').join('<br>');
+}
+function drawAnalytics(){if(!xAnalytics)return; drawLine($('#chAn'),xAnalytics.days); const t=xAnalytics.totals||{};
+  $('#xAnStats').innerHTML=[['💬 Messages (14d)',(t.messages_14d||0).toLocaleString()],['🚀 Deploys (14d)',t.deploys_14d||0],['🤖 New Bots (14d)',t.new_bots_14d||0],['❌ Error Rate',(t.error_rate??0)+'%']].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
+  $('#xRegions').innerHTML=(xAnalytics.regions||[]).map(r=>'<div style="margin-bottom:10px"><div class="flex" style="justify-content:space-between;font-size:13px"><span>'+esc(r.name)+'</span><span>'+r.share+'%</span></div><div class="bar"><i style="width:'+r.share+'%"></i></div></div>').join('');
+}
+
+/* ---------- data ---------- */
+async function refreshAll(silent){
   try{
-    const [ov,st,hl]=await Promise.all([xApi('/api/admin?action=overview'),api('/api/stats'),api('/api/health')]);
-    const bots=await api('/api/bots').catch(()=>({count:0}));
-    $('#xStats').innerHTML=[['🤖 Bots (instance)',bots.count??0],['🌍 Bots Hosted',(st.showcase?.botsHosted||0).toLocaleString()],['💬 Msgs / day',(st.showcase?.messagesPerDay||0).toLocaleString()],['⏱ Instance Uptime',(ov.platform.instance_uptime_s||0)+'s']].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
-    $('#xPlatform').textContent=JSON.stringify({health:hl,platform:ov.platform,flags:ov.flags},null,2);
-    $('#xAudit').innerHTML=(ov.audit&&ov.audit.length)?ov.audit.map(a=>'• '+new Date(a.at*1000).toLocaleString()+' — <b style="color:#fff">'+esc(a.actor)+'</b> '+esc(a.action)+' '+esc(a.detail||'')).join('<br>'):'No actions recorded yet.';
-    const f=ov.flags||{}; $('#xfMaintenance').checked=!!f.maintenance; $('#xfReg').checked=f.registrations_open!==false;
-    $('#xfTpl').checked=f.show_templates!==false; $('#xfPricing').checked=f.show_pricing!==false; $('#xfFaq').checked=f.show_faq!==false;
-    $('#xfAnnounce').value=f.announcement||xCfg.announcement||''; $('#xfTitle').value=f.site_title||xCfg.site_title||'';
-    if(f.default_framework)$('#xfFramework').value=f.default_framework; if(f.default_region)$('#xfRegion').value=f.default_region;
-  }catch(e){$('#xPlatform').textContent='Error: '+e.message}
+    const [ov,st,bots]=await Promise.all([xApi('/api/admin?action=overview'),api('/api/stats').catch(()=>({})),api('/api/bots').catch(()=>({bots:[],count:0}))]);
+    xAnalytics=ov.analytics||xAnalytics; xAdminBots=ov.admin_bots||[];
+    const t=(xAnalytics&&xAnalytics.totals)||{};
+    $('#xStats').innerHTML=[['🤖 Bots (instance)',bots.count??(bots.bots||[]).length],['🛡️ Managed Bots',xAdminBots.length],['💬 Messages (14d)',(t.messages_14d||st.showcase?.messagesPerDay||0).toLocaleString()],['🚀 Deploys (14d)',t.deploys_14d||'—']].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
+    $('#xPlatform').textContent=JSON.stringify(ov.platform,null,2);
+    $('#xAudit').innerHTML=(ov.audit&&ov.audit.length)?ov.audit.map(a=>'<div class="audit-item"><span>'+new Date(a.at*1000).toLocaleTimeString()+'</span><b>'+esc(a.actor)+'</b> '+esc(a.action)+' <em>'+esc(a.detail||'')+'</em></div>').join(''):'No actions recorded yet.';
+    fillFlags(ov.flags||{}); drawLine($('#chTraffic'),xAnalytics?xAnalytics.days:[]); drawDonut($('#chFw'),xAnalytics?xAnalytics.frameworks:[]);
+    renderXBots(bots.bots||[]); $('#xUpdated').textContent='updated '+new Date().toLocaleTimeString(); window._xAudit=ov.audit||[];
+    if(!silent)toast('↻ Console data refreshed');
+  }catch(e){if(!silent)toast('❌ '+e.message)}
 }
-async function loadXBots(){
-  try{const d=await api('/api/bots');
-    $('#xServerBots').innerHTML=(d.bots&&d.bots.length)?d.bots.map(b=>'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br>@'+esc(b.username):'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="tag live">'+esc(b.status)+'</span></td><td><button class="btn small danger" onclick="xDelServerBot(\''+b.id+'\')">Remove</button></td></tr>').join(''):'<tr><td colspan="5" style="color:var(--mut)">Registry empty on this instance.</td></tr>';
-  }catch(e){$('#xServerBots').innerHTML='<tr><td colspan="5" style="color:var(--red)">'+esc(e.message)+'</td></tr>'}
-  $('#xLocalBots').innerHTML=myBots.length?myBots.map((b,i)=>'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br>@'+esc(b.username):'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="flex"><button class="btn small ghost" onclick="xHookDelete('+i+')">Remove Webhook</button><button class="btn small danger" onclick="xDelLocalBot('+i+')">Delete</button></span></td></tr>').join(''):'<tr><td colspan="4" style="color:var(--mut)">None saved in this browser.</td></tr>';
+function fillFlags(f){
+  const v=(id,val)=>{const e=$(id);if(e)e.checked=!!val}, s=(id,val)=>{const e=$(id);if(e&&val!==undefined)e.value=val||''};
+  v('#xfMaintenance',f.maintenance);v('#xfReg',f.registrations_open!==false);v('#xfDeploy',f.deploy_enabled!==false);
+  v('#xfTpl',f.show_templates!==false);v('#xfPricing',f.show_pricing!==false);v('#xfFaq',f.show_faq!==false);
+  v('#xfPlay',f.show_playground!==false);v('#xfBotsSec',f.show_bots_section!==false);
+  s('#xfAnnounce',f.announcement);s('#xfTitle',f.site_title);s('#xfBrand',f.brand_name);s('#xfHero',f.hero_title);
+  s('#xfHeroSub',f.hero_subtitle);s('#xfFooter',f.footer_text);s('#xfSupport',f.support_url);
+  s('#xfMaintMsg',f.maintenance_message);s('#xfMaxBots',f.max_bots_per_user);
+  if(f.default_framework)$('#xfFramework').value=f.default_framework; if(f.default_region)$('#xfRegion').value=f.default_region;
+  updatePreview();
 }
-window.xDelServerBot=async id=>{if(!confirm('Remove this bot from the server registry?'))return; try{await xApi('/api/bots?id='+encodeURIComponent(id),{method:'DELETE'});toast('Removed');loadXBots();loadOverview()}catch(e){toast('❌ '+e.message)}};
-window.xDelLocalBot=i=>{if(!confirm('Delete this bot from this browser?'))return; myBots.splice(i,1);saveBots();renderBots();loadXBots();toast('Deleted')};
+function botRow(b,actions){return '<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br><a href="https://t.me/'+esc(b.username)+'" target="_blank">@'+esc(b.username)+'</a>':'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="tag live">'+esc(b.status||'live')+'</span></td><td>'+actions+'</td></tr>'}
+function renderXBots(serverBots){
+  const q=($('#xSearch').value||'').toLowerCase();
+  const match=b=>!q||(b.name+' '+(b.username||'')+' '+b.framework).toLowerCase().includes(q);
+  $('#xAdminBots').innerHTML=xAdminBots.filter(match).length?xAdminBots.filter(match).map(b=>botRow(b,'<button class="btn small danger" onclick="xDelAdminBot(\''+b.id+'\')">Remove</button>')).join(''):'<tr><td colspan="5" style="color:var(--mut)">No console-managed bots yet.</td></tr>';
+  $('#xServerBots').innerHTML=(serverBots||[]).filter(match).length?(serverBots||[]).filter(match).map(b=>botRow(b,'<button class="btn small danger" onclick="xDelServerBot(\''+b.id+'\')">Remove</button>')).join(''):'<tr><td colspan="5" style="color:var(--mut)">Registry empty on this instance.</td></tr>';
+  $('#xLocalBots').innerHTML=myBots.filter(match).length?myBots.map((b,i)=>match(b)?'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br>@'+esc(b.username):'')+'</td><td>'+esc(b.framework)+'</td><td>'+esc(b.mode)+'</td><td><span class="flex"><button class="btn small ghost" onclick="xHookDelete('+i+')">Remove Webhook</button><button class="btn small danger" onclick="xDelLocalBot('+i+')">Delete</button></span></td></tr>':'').join(''):'<tr><td colspan="4" style="color:var(--mut)">None saved in this browser.</td></tr>';
+}
+$('#xSearch').addEventListener('input',()=>refreshAll(true));
+window.xDelAdminBot=async id=>{if(!confirm('Remove this managed bot?'))return; try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'remove_bot',id})});refreshAll(true)}catch(e){toast('❌ '+e.message)}};
+window.xDelServerBot=async id=>{if(!confirm('Remove this bot from the server registry?'))return; try{await xApi('/api/bots?id='+encodeURIComponent(id),{method:'DELETE'});refreshAll(true)}catch(e){toast('❌ '+e.message)}};
+window.xDelLocalBot=i=>{if(!confirm('Delete this bot from this browser?'))return; myBots.splice(i,1);saveBots();renderBots();refreshAll(true)};
 window.xHookDelete=async i=>{const b=myBots[i]; if(!b||!b.token){toast('No stored token for this bot');return} if(!confirm('Delete Telegram webhook for '+(b.username?'@'+b.username:b.name)+'?'))return; try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'webhook_delete',token:b.token})});toast('Webhook deleted')}catch(e){toast('❌ '+e.message)}};
+$('#xBulkLocal').onclick=()=>{if(!confirm('Delete ALL browser bots?'))return; myBots=[];saveBots();renderBots();refreshAll(true);toast('All browser bots deleted')};
 
-/* webhook control */
-async function xHook(action){
+/* add managed bot */
+$('#xaAdd').onclick=async()=>{
+  const token=$('#xaToken').value.trim(),out=$('#xaOut'); out.textContent='⏳ Adding…';
+  try{
+    const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'add_bot',name:$('#xaName').value.trim(),framework:$('#xaFramework').value,token,mode:'webhook'})});
+    if(token&&$('#xaHook').checked){await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'webhook_set',token})});out.innerHTML='<span style="color:var(--grn)">✅ Added + webhook live'+(d.bot.username?' for @'+esc(d.bot.username):'')+'</span>'}
+    else out.innerHTML='<span style="color:var(--grn)">✅ Bot added</span>';
+    $('#xaToken').value=''; refreshAll(true);
+  }catch(e){out.innerHTML='<span style="color:var(--red)">❌ '+esc(e.message)+'</span>'}
+};
+
+/* telegram lab */
+async function xHook(action,extra={}){
   const token=$('#xwToken').value.trim(), out=$('#xwOut'); if(!token){out.textContent='Paste a bot token first.';return}
   out.textContent='⏳ Talking to Telegram…';
-  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action,token,webhook_url:$('#xwUrl').value.trim()})}); out.textContent=JSON.stringify(d,null,2); loadOverview();}
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action,token,webhook_url:$('#xwUrl').value.trim(),...extra})}); out.textContent=JSON.stringify(d,null,2); refreshAll(true)}
   catch(e){out.textContent='❌ '+e.message}
 }
 $('#xwValidate').onclick=()=>xHook('validate'); $('#xwInfo').onclick=()=>xHook('webhook_info');
 $('#xwSet').onclick=()=>xHook('webhook_set'); $('#xwDelete').onclick=()=>{if(confirm('Delete this bot\'s webhook? It will stop responding.'))xHook('webhook_delete')};
-
-/* site control */
-$('#xfSave').onclick=async()=>{
-  xCfg={maintenance:$('#xfMaintenance').checked,registrations_open:$('#xfReg').checked,show_templates:$('#xfTpl').checked,show_pricing:$('#xfPricing').checked,show_faq:$('#xfFaq').checked,announcement:$('#xfAnnounce').value.trim(),site_title:$('#xfTitle').value.trim(),default_framework:$('#xfFramework').value,default_region:$('#xfRegion').value};
-  localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg);
-  try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:xCfg})}); toast('💾 Site control saved & applied')}catch(e){toast('Saved locally · server: '+e.message)}
-  loadOverview();
+$('#xmSend').onclick=()=>{if(!$('#xmText').value.trim()){$('#xwOut').textContent='Write a message first.';return} xHook('send_message',{chat_id:$('#xmChat').value.trim(),text:$('#xmText').value,parse_mode:$('#xmParse').value})};
+$('#xtCmd').onchange=()=>$('#xtCustom').classList.toggle('hide',$('#xtCmd').value!=='custom');
+$('#xtRun').onclick=async()=>{
+  const text=$('#xtCmd').value==='custom'?$('#xtCustom').value:$('#xtCmd').value, out=$('#xwOut'); out.textContent='⏳ Asking the brain…';
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'test_brain',text})}); out.textContent='🧠 Input: '+text+'\n\n'+JSON.stringify(d.reply,null,2)}
+  catch(e){out.textContent='❌ '+e.message}
 };
-$('#xfReset').onclick=async()=>{xCfg={};localStorage.removeItem(XKEY);try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:{maintenance:false,registrations_open:true,show_templates:true,show_pricing:true,show_faq:true,announcement:'',site_title:'',default_framework:'',default_region:''}})})}catch(e){} location.reload()};
+
+/* quick actions + health */
+async function runHealth(target){
+  const out=$(target||'#xHealthOut'); out.textContent='⏳ Probing endpoints…';
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'health_check'})});
+    out.textContent=d.checks.map(c=>(c.ok?'✅':'❌')+' '+c.endpoint+' — '+c.status+' ('+c.ms+'ms)').join('\n'); refreshAll(true);
+  }catch(e){out.textContent='❌ '+e.message}
+}
+$$('[data-q]').forEach(b=>b.onclick=async()=>{
+  const q=b.dataset.q;
+  if(q.startsWith('goto:'))gotoTab(q.slice(5));
+  else if(q==='health')runHealth('#xHealthOut');
+  else if(q==='export')$('#xsExport').click();
+  else if(q==='maintenance'){gotoTab('site');$('#xfMaintenance').checked=!$('#xfMaintenance').checked;$('#xfSave').click()}
+});
+$('#xsHealth').onclick=()=>runHealth('#xsHealthOut');
+
+/* site builder */
+function updatePreview(){const h=$('#xfHero').value,s=$('#xfHeroSub').value; $('#pvHero').innerHTML=h||'Host Python Telegram Bots'; $('#pvSub').textContent=s||'Live preview of your public hero section.'}
+['xfHero','xfHeroSub','xfBrand','xfAnnounce'].forEach(id=>{const e=document.getElementById(id); if(e)e.addEventListener('input',updatePreview)});
+let xAccent=''; $$('#xfAccent .swatch').forEach(b=>b.onclick=()=>{xAccent=b.dataset.accent;$$('#xfAccent .swatch').forEach(x=>x.style.outline='');b.style.outline='2px solid #fff';toast('Accent selected — Save to apply')});
+function collectFlags(){return {maintenance:$('#xfMaintenance').checked,registrations_open:$('#xfReg').checked,deploy_enabled:$('#xfDeploy').checked,show_templates:$('#xfTpl').checked,show_pricing:$('#xfPricing').checked,show_faq:$('#xfFaq').checked,show_playground:$('#xfPlay').checked,show_bots_section:$('#xfBotsSec').checked,announcement:$('#xfAnnounce').value.trim(),site_title:$('#xfTitle').value.trim(),brand_name:$('#xfBrand').value.trim(),hero_title:$('#xfHero').value.trim(),hero_subtitle:$('#xfHeroSub').value.trim(),footer_text:$('#xfFooter').value.trim(),support_url:$('#xfSupport').value.trim(),maintenance_message:$('#xfMaintMsg').value.trim(),max_bots_per_user:$('#xfMaxBots').value.trim(),accent:xAccent,default_framework:$('#xfFramework').value,default_region:$('#xfRegion').value}}
+$('#xfSave').onclick=async()=>{
+  xCfg=collectFlags(); localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg);
+  try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:xCfg})}); toast('💾 Site is now updated live')}catch(e){toast('Saved locally · server: '+e.message)}
+  refreshAll(true);
+};
+$('#xfReset').onclick=async()=>{xCfg={};xAccent='';localStorage.removeItem(XKEY);const blank={maintenance:false,registrations_open:true,deploy_enabled:true,show_templates:true,show_pricing:true,show_faq:true,show_playground:true,show_bots_section:true,announcement:'',site_title:'',brand_name:'',hero_title:'',hero_subtitle:'',footer_text:'',support_url:'',maintenance_message:'',max_bots_per_user:'',accent:'',default_framework:'',default_region:''};try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:blank})})}catch(e){} location.reload()};
+
+/* analytics export */
+$('#xCsv').onclick=()=>{if(!xAnalytics)return; const csv='date,deploys,messages,new_bots,errors\n'+xAnalytics.days.map(d=>[d.date,d.deploys,d.messages,d.new_bots,d.errors].join(',')).join('\n'); const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));a.download='analytics.csv';a.click();toast('📊 analytics.csv downloaded')};
 
 /* system */
-$('#xsClearRegistry').onclick=async()=>{if(!confirm('Remove ALL bots from the server registry?'))return; try{const d=await api('/api/bots'); for(const b of (d.bots||[]))await xApi('/api/bots?id='+encodeURIComponent(b.id),{method:'DELETE'}); $('#xsOut').textContent='Registry cleared ('+((d.bots||[]).length)+' bots).'; loadXBots()}catch(e){$('#xsOut').textContent='❌ '+e.message}};
-$('#xsClearLocal').onclick=()=>{if(!confirm('Remove ALL bots saved in this browser?'))return; myBots=[];saveBots();renderBots();loadXBots();$('#xsOut').textContent='Local bots cleared.'};
-$('#xsClearAudit').onclick=async()=>{try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'clear_audit'})});loadOverview();$('#xsOut').textContent='Audit cleared.'}catch(e){$('#xsOut').textContent='❌ '+e.message}};
-$('#xsExport').onclick=()=>{const blob=new Blob([JSON.stringify(xCfg,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='site-config.json';a.click();$('#xsOut').textContent='Exported site-config.json'};
-$('#xsImport').onclick=async()=>{const f=$('#xsImportFile').files[0]; if(!f){$('#xsOut').textContent='Choose a JSON file first.';return} try{xCfg=JSON.parse(await f.text());localStorage.setItem(XKEY,JSON.stringify(xCfg));applySiteCfg(xCfg);await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'set_flags',flags:xCfg})});$('#xsOut').textContent='Imported & applied.';loadOverview()}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+$('#xsExport').onclick=async()=>{try{const d=await xApi('/api/admin?action=export_state');const blob=new Blob([JSON.stringify({...d.state,site_config:xCfg},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='console-state.json';a.click();$('#xsOut').textContent='Exported console-state.json (no tokens included).'}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+$('#xsImport').onclick=async()=>{const f=$('#xsImportFile').files[0]; if(!f){$('#xsOut').textContent='Choose a JSON file first.';return} try{const st=JSON.parse(await f.text()); const flags=st.flags||st.site_config||st; xCfg={...xCfg,...flags}; localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg); await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'import_state',state:{flags}})}); $('#xsOut').textContent='Imported & applied.'; refreshAll(true)}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+$('#xsAuditCsv').onclick=()=>{const rows=[['time','actor','action','detail'],...(window._xAudit||[]).map(a=>[new Date(a.at*1000).toISOString(),a.actor,a.action,(a.detail||'').replaceAll(',',';')])]; const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([rows.map(r=>r.join(',')).join('\n')],{type:'text/csv'}));a.download='audit.csv';a.click()};
+$('#xsClearRegistry').onclick=async()=>{if(!confirm('Remove ALL bots from the server registry?'))return; try{const d=await api('/api/bots'); for(const b of (d.bots||[]))await xApi('/api/bots?id='+encodeURIComponent(b.id),{method:'DELETE'}); $('#xsOut').textContent='Registry cleared.'; refreshAll(true)}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+$('#xsClearLocal').onclick=async()=>{if(!confirm('Remove console-managed AND browser bots?'))return; for(const b of [...xAdminBots]){try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'remove_bot',id:b.id})})}catch(e){}} myBots=[];saveBots();renderBots();refreshAll(true);$('#xsOut').textContent='All bots cleared.'};
+$('#xsClearAudit').onclick=async()=>{try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'clear_audit'})});refreshAll(true);$('#xsOut').textContent='Audit cleared.'}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+$('#xsWipe').onclick=async()=>{if(!confirm('WIPE all console state on this instance?'))return; try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'clear_state'})});$('#xsOut').textContent='State wiped.';refreshAll(true)}catch(e){$('#xsOut').textContent='❌ '+e.message}};
+
+/* command palette */
+const PALETTE=[
+ ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['✈️ Telegram Lab',()=>gotoTab('telegram')],
+ ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
+ ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
+ ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],
+];
+function openPalette(){$('#xPalette').classList.remove('hide');renderPalette('');setTimeout(()=>$('#xPalInput').focus(),40)}
+function renderPalette(q){$('#xPalList').innerHTML=PALETTE.filter(p=>p[0].toLowerCase().includes(q.toLowerCase())).map((p,i)=>'<button class="pal-item" data-pal="'+PALETTE.indexOf(p)+'">'+p[0]+'</button>').join('')||'<p style="color:var(--mut);padding:10px">No commands found.</p>';
+  $$('#xPalList .pal-item').forEach(b=>b.onclick=()=>{$('#xPalette').classList.add('hide');PALETTE[+b.dataset.pal][1]()})}
+$('#xPaletteBtn').onclick=openPalette; $('#xPalClose').onclick=()=>$('#xPalette').classList.add('hide');
+$('#xPalInput').addEventListener('input',e=>renderPalette(e.target.value));
+$('#xPalette').addEventListener('click',e=>{if(e.target.id==='xPalette')$('#xPalette').classList.add('hide')});
 </script>
 </body>
 </html>
