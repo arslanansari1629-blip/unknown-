@@ -293,9 +293,85 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
 #xPanel[data-theme="light"] .sec-row,#xPanel[data-theme="light"] .feed-item,#xPanel[data-theme="light"] .insight{border-bottom-color:#dbe5fa}
 #xPanel[data-theme="light"] .sec-row b,#xPanel[data-theme="light"] .feed-item b,#xPanel[data-theme="light"] .insight b{color:#17233f}
 
+/* ===== UI 3.0 Aurora + Opening Animation ===== */
+::selection{background:#2aabee;color:#fff}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#22336b;border-radius:99px}::-webkit-scrollbar-track{background:#050914}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)!important;box-shadow:0 0 0 4px #2aabee22;outline:none}
+nav{border-bottom:1px solid transparent;background:linear-gradient(#050914d9,#050914d9) padding-box,linear-gradient(90deg,#2aabee55,#7c5cff55,#ff7ac855) border-box;backdrop-filter:blur(18px)}
+.hero .pill{backdrop-filter:blur(8px);background:#0d1834b8;box-shadow:0 8px 24px -10px #2aabee55}
+.hero h1{text-shadow:0 20px 60px #2aabee22}
+.hero .stat{background:linear-gradient(165deg,#101d42cc,#0a1230cc);border:1px solid #26397a;backdrop-filter:blur(10px);transition:transform .25s,box-shadow .25s,border-color .25s}
+.hero .stat:hover{transform:translateY(-5px);border-color:#3d5bb5;box-shadow:0 20px 40px -18px #2aabee66}
+section .card,.tpl,.feat,.price{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease}
+section .card:hover,.tpl:hover,.feat:hover,.price:hover{transform:translateY(-5px);border-color:#3d5bb5;box-shadow:0 24px 48px -20px #2aabee55}
+section h2{position:relative;display:inline-block;padding-bottom:10px}
+section h2::after{content:'';position:absolute;left:0;bottom:0;height:4px;width:72px;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8);box-shadow:0 4px 16px #7c5cff66}
+.btn:hover{background-position:92% 0;transform:translateY(-2px);box-shadow:0 16px 36px -10px #2aabee77}
+.btn:active{transform:translateY(0)}
+.tilt{transform-style:preserve-3d;will-change:transform}
+/* hero entrance (plays after intro) */
+body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-delay:calc(var(--n,1)*95ms)}
+@keyframes hiUp{from{opacity:0;transform:translateY(26px) scale(.985)}to{opacity:1;transform:none}}
+/* feature marquee */
+.marquee{overflow:hidden;max-width:1180px;margin:34px auto 0;padding:14px 0;-webkit-mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent);mask-image:linear-gradient(90deg,transparent,#000 12%,#000 88%,transparent)}
+.mq-track{display:flex;gap:14px;width:max-content;animation:mqMove 30s linear infinite}
+.marquee:hover .mq-track{animation-play-state:paused}
+.mq-track span{flex:none;border:1px solid #24366e;background:linear-gradient(160deg,#101d42,#0a1230);color:#c7d6fb;border-radius:99px;padding:9px 18px;font-size:13.5px;font-weight:600;box-shadow:0 10px 24px -14px #000}
+.mq-track b{color:#fff}
+@keyframes mqMove{to{transform:translateX(-50%)}}
+/* cursor glow */
+#cursorGlow{position:fixed;top:0;left:0;width:520px;height:520px;border-radius:50%;pointer-events:none;z-index:1;background:radial-gradient(closest-side,#2aabee14,#7c5cff0d,transparent);transform:translate(-50%,-50%);opacity:0;transition:opacity .5s}
+/* ---------- opening animation ---------- */
+#intro{position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;cursor:pointer;overflow:hidden}
+#intro.off{display:none}
+#intro .in-half{position:absolute;left:0;right:0;height:50.5%;z-index:0;transition:transform .85s cubic-bezier(.7,0,.2,1) .3s}
+#intro .in-half.top{top:0;background:linear-gradient(180deg,#0a1330,#050914);border-bottom:1px solid #2aabee44}
+#intro .in-half.bot{bottom:0;background:linear-gradient(0deg,#0a1330,#050914);border-top:1px solid #7c5cff44}
+#intro.done .in-half.top{transform:translateY(-101%)}
+#intro.done .in-half.bot{transform:translateY(101%)}
+#intro.done{pointer-events:none;visibility:hidden;transition:visibility 0s 1.25s}
+.in-aurora{position:absolute;inset:-20%;z-index:1;background:radial-gradient(480px 320px at 22% 30%,#2aabee33,transparent),radial-gradient(560px 380px at 80% 70%,#7c5cff30,transparent),radial-gradient(420px 300px at 60% 15%,#ff7ac822,transparent);animation:auroraMove 7s ease-in-out infinite alternate;transition:opacity .4s}
+@keyframes auroraMove{to{transform:translate(3%,-2%) scale(1.08)}}
+.in-grid{position:absolute;inset:0;z-index:1;background-image:linear-gradient(#ffffff07 1px,transparent 1px),linear-gradient(90deg,#ffffff07 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(ellipse 70% 60% at 50% 50%,#000,transparent 75%);transition:opacity .4s}
+.in-core{position:relative;z-index:2;text-align:center;padding:20px;transition:opacity .45s,transform .45s}
+#intro.done .in-core,#intro.done .in-aurora,#intro.done .in-grid{opacity:0;transform:scale(.96)}
+.in-orb{position:relative;width:132px;height:132px;margin:0 auto 26px;display:flex;align-items:center;justify-content:center}
+.in-bolt{font-size:56px;width:104px;height:104px;display:flex;align-items:center;justify-content:center;border-radius:32px;background:linear-gradient(160deg,#ffffff1f,#ffffff08);border:1px solid #ffffff2e;backdrop-filter:blur(8px);animation:orbPulse 2.2s ease-in-out infinite;box-shadow:0 24px 60px -18px #2aabee88}
+@keyframes orbPulse{50%{transform:translateY(-7px) scale(1.03)}}
+.in-ring{position:absolute;inset:0;border-radius:50%;border:1px dashed #2aabee55;animation:inSpin 14s linear infinite}
+.in-ring.r2{inset:-16px;border-color:#7c5cff44;animation-duration:22s;animation-direction:reverse}
+@keyframes inSpin{to{transform:rotate(360deg)}}
+.in-chip{position:absolute;font-size:11.5px;font-weight:700;color:#dbe7ff;background:#0d1834d9;border:1px solid #2c4486;border-radius:99px;padding:6px 12px;white-space:nowrap;animation:chipFloat 4.5s ease-in-out infinite;box-shadow:0 12px 26px -12px #000}
+.in-chip.c1{top:-8px;left:-72px}.in-chip.c2{top:16px;right:-86px;animation-delay:.7s}.in-chip.c3{bottom:2px;left:-86px;animation-delay:1.3s}.in-chip.c4{bottom:-12px;right:-64px;animation-delay:1.9s}
+@keyframes chipFloat{50%{transform:translateY(-8px)}}
+.in-title{font-size:clamp(34px,7vw,58px);font-weight:900;letter-spacing:-1px;color:#fff;line-height:1.05}
+.in-title span{display:inline-block;animation:inRise .7s cubic-bezier(.2,.8,.25,1) both;animation-delay:calc(var(--i)*45ms)}
+@keyframes inRise{from{opacity:0;transform:translateY(24px) rotate(3deg)}to{opacity:1;transform:none}}
+.in-title em{font-style:normal;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:gradShift 5s ease infinite}
+.in-tag{color:#9db9ec;font-size:14.5px;margin-top:10px;animation:inRise .7s .55s both}
+.in-barwrap{width:min(300px,70vw);height:5px;margin:26px auto 10px;background:#16224d;border-radius:99px;overflow:hidden}
+.in-bar{height:100%;width:100%;border-radius:99px;background:linear-gradient(90deg,var(--blue),var(--vio),#ff7ac8);transform:scaleX(0);transform-origin:0 50%}
+.in-meta{display:flex;gap:14px;justify-content:center;align-items:center;font-size:12px;color:#5f7195}
+#introPct{color:#c7d6fb;font-weight:800;font-variant-numeric:tabular-nums}
+@media(max-width:640px){.in-chip{display:none}.in-orb{width:110px;height:110px}.in-bolt{width:88px;height:88px;font-size:44px}}
+@media(prefers-reduced-motion:reduce){.mq-track,.in-aurora,.in-bolt,.in-ring,.in-chip,.in-title span,.in-tag{animation:none!important}body.played .hi{animation:none}}
+
 </style>
 </head>
 <body>
+<div id="cursorGlow"></div>
+<div id="intro" role="button" aria-label="Skip intro" title="Click to skip">
+  <div class="in-half top"></div><div class="in-half bot"></div>
+  <div class="in-aurora"></div><div class="in-grid"></div>
+  <div class="in-core">
+    <div class="in-orb"><span class="in-ring"></span><span class="in-ring r2"></span><span class="in-bolt">⚡</span><span class="in-chip c1">🐍 Python</span><span class="in-chip c2">✈️ Telegram</span><span class="in-chip c3">☁️ Serverless</span><span class="in-chip c4">🌍 16 Languages</span></div>
+    <h1 class="in-title"><span style="--i:1">P</span><span style="--i:2">y</span><span style="--i:3">T</span><span style="--i:4">e</span><span style="--i:5">l</span><span style="--i:6">e</span><span style="--i:7">H</span><span style="--i:8">o</span><span style="--i:9">s</span><span style="--i:10">t</span> <em>ULTRA</em></h1>
+    <p class="in-tag">Host Telegram bots 24/7 · in seconds · free forever</p>
+    <div class="in-barwrap"><div class="in-bar" id="introBar"></div></div>
+    <div class="in-meta"><span id="introPct">0%</span><span>click anywhere to skip ›</span></div>
+  </div>
+</div>
+<script>try{if(location.hash==='#/console-900s'||matchMedia('(prefers-reduced-motion: reduce)').matches)document.getElementById('intro').classList.add('off')}catch(e){}</script>
 <div class="blob b1"></div><div class="blob b2"></div><div class="grid-bg"></div>
 <div id="scrollProgress"></div>
 <div id="siteBanner" class="hide"></div>
@@ -310,23 +386,24 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
 </div></nav>
 
 <header class="hero wrap">
-  <span class="pill">🐍 Python 3.12 · ☁️ Vercel Serverless · 🤖 Telegram Bot API</span>
-  <h1 id="heroTitle">Host Python Telegram Bots<br><span class="g">24/7. In Seconds. Free.</span></h1>
-  <p id="heroSub">Paste your bot token, press deploy — your Python bot goes live on global serverless webhooks. No VPS, no polling, no credit card. python-telegram-bot, aiogram, Telethon &amp; raw Bot API supported.</p>
-  <div class="flex" style="justify-content:center">
+  <span class="pill hi" style="--n:1">🐍 Python 3.12 · ☁️ Vercel Serverless · 🤖 Telegram Bot API</span>
+  <h1 id="heroTitle" class="hi" style="--n:2">Host Python Telegram Bots<br><span class="g">24/7. In Seconds. Free.</span></h1>
+  <p id="heroSub" class="hi" style="--n:3">Paste your bot token, press deploy — your Python bot goes live on global serverless webhooks. No VPS, no polling, no credit card. python-telegram-bot, aiogram, Telethon &amp; raw Bot API supported.</p>
+  <div class="flex hi" style="justify-content:center;--n:4">
     <a class="btn" href="#deploy">🚀 Deploy My Bot</a>
     <a class="btn ghost" href="#templates">📚 View Templates</a>
   </div>
-  <div class="lang-strip" aria-label="Supported languages">
+  <div class="lang-strip hi" style="--n:5" aria-label="Supported languages">
     <span>🐍 <b>Python</b></span><span>🟢 <b>Node.js</b></span><span>☕ <b>Java</b></span><span>🔵 <b>Go</b></span><span>🦀 <b>Rust</b></span><span>🟣 <b>C#</b></span><span>🐘 <b>PHP</b></span><span>💎 <b>Ruby</b></span><span>🐚 <b>Bash</b></span><span style="border-color:var(--vio);color:#fff">🌍 Multi-language code hosting included</span>
   </div>
-  <div class="stats">
+  <div class="stats hi" style="--n:6">
     <div class="stat"><b data-count="12847">0</b><s>Bots hosted</s></div>
     <div class="stat"><b><span data-count="99.99" data-dec="2">0</span>%</b><s>Uptime</s></div>
     <div class="stat"><b><span data-count="18">0</span>s</b><s>Avg. deploy time</s></div>
     <div class="stat"><b><span data-count="42">0</span>ms</b><s>Cold start</s></div>
   </div>
 </header>
+<div class="marquee" aria-hidden="true"><div class="mq-track"><span>⚡ <b>18s</b> average deploy</span><span>☁️ <b>24/7</b> serverless uptime</span><span>🐍 <b>Python</b> · ☕ Java · 🟢 Node · 🔵 Go</span><span>🔐 Tokens <b>never stored</b></span><span>🌍 <b>16 languages</b> code hosting</span><span>🛡️ Hidden <b>admin console</b></span><span>📡 Live <b>latency monitoring</b></span><span>🎉 <b>Free</b> forever tier</span><span>⚡ <b>18s</b> average deploy</span><span>☁️ <b>24/7</b> serverless uptime</span><span>🐍 <b>Python</b> · ☕ Java · 🟢 Node · 🔵 Go</span><span>🔐 Tokens <b>never stored</b></span><span>🌍 <b>16 languages</b> code hosting</span><span>🛡️ Hidden <b>admin console</b></span><span>📡 Live <b>latency monitoring</b></span><span>🎉 <b>Free</b> forever tier</span></div></div>
 
 <section id="deploy" class="wrap">
   <h2>🚀 Deploy Console</h2>
@@ -1605,6 +1682,41 @@ function renderPalette(q){$('#xPalList').innerHTML=PALETTE.filter(p=>p[0].toLowe
 $('#xPaletteBtn').onclick=openPalette; $('#xPalClose').onclick=()=>$('#xPalette').classList.add('hide');
 $('#xPalInput').addEventListener('input',e=>renderPalette(e.target.value));
 $('#xPalette').addEventListener('click',e=>{if(e.target.id==='xPalette')$('#xPalette').classList.add('hide')});
+
+/* ================= UI 3.0: opening animation, cursor glow, 3D tilt ================= */
+(function(){
+  const intro=$('#intro');
+  const played=()=>document.body.classList.add('played');
+  if(!intro||intro.classList.contains('off')){played()}
+  else{
+    document.body.style.overflow='hidden';
+    let seen=false; try{seen=!!sessionStorage.getItem('ui3_intro'); sessionStorage.setItem('ui3_intro','1')}catch(e){}
+    const DUR=seen?900:2100, t0=performance.now(), bar=$('#introBar'), pct=$('#introPct');
+    let done=false;
+    const finish=()=>{ if(done)return; done=true; intro.classList.add('done'); played();
+      if($('#xPanel')&&$('#xPanel').classList.contains('hide'))document.body.style.overflow='';
+      setTimeout(()=>intro.classList.add('off'),1300); };
+    (function tick(){ const p=Math.min(1,(performance.now()-t0)/DUR), e=1-Math.pow(1-p,3);
+      if(bar)bar.style.transform='scaleX('+e+')'; if(pct)pct.textContent=Math.round(e*100)+'%';
+      if(p<1&&!done)requestAnimationFrame(tick); else finish(); })(t0);
+    intro.addEventListener('click',finish);
+    addEventListener('keydown',()=>{ if(!done&&!intro.classList.contains('off'))finish(); });
+  }
+  /* cursor glow + tilt (fine pointers only) */
+  const mq=q=>{try{return !!matchMedia(q).matches}catch(e){return false}};
+  const fine=mq('(hover:hover) and (pointer:fine)'), calm=mq('(prefers-reduced-motion: reduce)');
+  if(fine&&!calm){
+    const glow=$('#cursorGlow'); let gx=innerWidth/2, gy=innerHeight/2, tx=gx, ty=gy;
+    addEventListener('mousemove',e=>{tx=e.clientX; ty=e.clientY; if(glow)glow.style.opacity='1'});
+    (function loop(){ gx+=(tx-gx)*.08; gy+=(ty-gy)*.08; if(glow)glow.style.transform='translate('+(gx-260)+'px,'+(gy-260)+'px)'; requestAnimationFrame(loop); })();
+    $$('.tpl,.feat,.price').forEach(el=>{ el.classList.add('tilt');
+      el.addEventListener('mousemove',e=>{ const r=el.getBoundingClientRect(), x=(e.clientX-r.left)/r.width-.5, y=(e.clientY-r.top)/r.height-.5;
+        el.style.transform='perspective(700px) rotateX('+(-y*6)+'deg) rotateY('+(x*6)+'deg) translateY(-5px)'; });
+      el.addEventListener('mouseleave',()=>{ el.style.transform=''; });
+    });
+  }
+})();
+
 
 /* ================= Console v9 Nexus: monitor, security, notifications, insights ================= */
 let xmLastProbe=0, xmLastSec=0, xmCountdown=10, xmFedAt=0;
