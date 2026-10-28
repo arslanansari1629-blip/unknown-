@@ -205,6 +205,61 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
 #xGate .box h3{font-size:23px;background:linear-gradient(90deg,#fff,#9db9ec);-webkit-background-clip:text;background-clip:text;color:transparent}
 .xp-user small{letter-spacing:.3px}
 
+
+/* ===== Console v8 ===== */
+#xPanel::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(600px 300px at 15% 0%,#2aabee16,transparent),radial-gradient(700px 420px at 90% 100%,#7c5cff16,transparent);animation:meshPulse 9s ease-in-out infinite alternate}
+@keyframes meshPulse{to{opacity:.45;transform:scale(1.07)}}
+.xp-shell{position:relative;z-index:1}
+.xp-main .card{position:relative;overflow:hidden}
+.xp-main .card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--acc),var(--acc2),transparent 80%);opacity:0;transition:opacity .25s}
+.xp-main .card:hover::before{opacity:1}
+[data-xpane].pane-in{animation:paneIn .38s cubic-bezier(.2,.8,.25,1)}
+@keyframes paneIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.spark{display:flex;gap:2px;align-items:flex-end;height:22px;margin-top:9px}.spark i{flex:1;background:linear-gradient(180deg,var(--acc),var(--acc2));border-radius:2px;min-height:3px;opacity:.85}
+.x-welcome{display:flex;gap:16px;align-items:center;flex-wrap:wrap;border:1px solid #2a3f7d;border-radius:20px;padding:20px 22px;margin-bottom:16px;background:linear-gradient(110deg,#14295e,#3b157a 55%,#7a1e5e);position:relative;overflow:hidden}
+.x-welcome::after{content:'';position:absolute;right:-60px;bottom:-100px;width:270px;height:270px;border-radius:50%;background:radial-gradient(closest-side,#ff7ac866,transparent)}
+.xw-orb{font-size:32px;width:62px;height:62px;flex:none;display:flex;align-items:center;justify-content:center;border-radius:19px;background:#ffffff1f;border:1px solid #ffffff33;animation:floaty 5s ease-in-out infinite;z-index:1}
+.x-welcome h3{color:#fff;font-size:21px;margin-bottom:4px}.x-welcome p{color:#d7e4ff;font-size:13.5px;line-height:1.55}
+.xw-actions{margin-left:auto;display:flex;gap:9px;flex-wrap:wrap;z-index:1}
+/* collapsible rail sidebar */
+#xRailBtn.on{border-color:var(--acc);color:#fff}
+#xPanel.rail .xp-shell{grid-template-columns:76px 1fr}
+#xPanel.rail .xp-side{padding:14px 9px}
+#xPanel.rail .xp-group,#xPanel.rail .xp-user{display:none}
+#xPanel.rail .xp-brand{text-align:center;padding:4px 0 10px;font-size:19px}
+#xPanel.rail .xp-brand span{display:none}
+#xPanel.rail .xp-nav{font-size:0;text-align:center;padding:13px 0}
+#xPanel.rail .xp-nav::before{position:static;width:auto;height:auto;background:none;font-size:19px}
+#xPanel.rail .xp-nav[data-xtab="overview"]::before{content:'📊'}
+#xPanel.rail .xp-nav[data-xtab="bots"]::before{content:'🤖'}
+#xPanel.rail .xp-nav[data-xtab="hosting"]::before{content:'🚀'}
+#xPanel.rail .xp-nav[data-xtab="code"]::before{content:'🗂️'}
+#xPanel.rail .xp-nav[data-xtab="telegram"]::before{content:'✈️'}
+#xPanel.rail .xp-nav[data-xtab="analytics"]::before{content:'📈'}
+#xPanel.rail .xp-nav[data-xtab="site"]::before{content:'🎛️'}
+#xPanel.rail .xp-nav[data-xtab="system"]::before{content:'⚙️'}
+#xPanel.rail .xp-side-foot .btn{font-size:0;padding:10px 0}
+#xPanel.rail #xPaletteBtn::before{content:'⌘K';font-size:12px}
+#xPanel.rail #xRefresh::before{content:'↻';font-size:16px}
+#xPanel.rail #xLogout::before{content:'⏻';font-size:16px}
+/* light theme */
+#xPanel[data-theme="light"]{--txt:#17233f;--mut:#5b6d94;--line:#c7d5f2;background:radial-gradient(900px 480px at 85% -10%,#bcd2ff88,transparent),radial-gradient(760px 480px at -10% 110%,#e3c8ff77,transparent),#edf1fa}
+#xPanel[data-theme="light"] .xp-side{background:linear-gradient(180deg,#ffffff,#eef3ff);border-right-color:#c7d5f2}
+#xPanel[data-theme="light"] .xp-topbar{background:#ffffffd9;border-bottom-color:#c7d5f2}
+#xPanel[data-theme="light"] .xp-nav{color:#41527a}#xPanel[data-theme="light"] .xp-nav:hover{background:#e3ebff;color:#17233f}
+#xPanel[data-theme="light"] .xp-nav.on{background:linear-gradient(90deg,#d7e5ff,#e9efff);color:#17233f}
+#xPanel[data-theme="light"] .xp-main .card{background:linear-gradient(180deg,#ffffff,#f2f6ff);border-color:#c7d5f2;box-shadow:0 14px 30px -20px #7a90c4}
+#xPanel[data-theme="light"] .xp-main .stat{background:linear-gradient(160deg,#ffffff,#e9f0ff);border-color:#c7d5f2}
+#xPanel[data-theme="light"] .xp-main input,#xPanel[data-theme="light"] .xp-main select,#xPanel[data-theme="light"] .xp-main textarea{background:#ffffff;color:#17233f;border-color:#c7d5f2}
+#xPanel[data-theme="light"] pre.json{background:#eef3ff;color:#26355c;border-color:#c7d5f2}
+#xPanel[data-theme="light"] [style*="color:#fff"]{color:#17233f!important}
+#xPanel[data-theme="light"] .x-welcome p{color:#d7e4ff}#xPanel[data-theme="light"] .x-welcome [style*="color:#fff"]{color:#fff!important}
+#xPanel[data-theme="light"] .dm-cell,#xPanel[data-theme="light"] .langcard{background:#ffffff!important}
+#xPanel[data-theme="light"] .fileitem{color:#41527a;border-bottom-color:#dbe5fa}
+#xPanel[data-theme="light"] .modal .box{background:#ffffff;color:#17233f}
+#xPanel[data-theme="light"] .btn.ghost{background:#e7eeff;color:#26355c;border-color:#c7d5f2}
+#xPanel[data-theme="light"] ::-webkit-scrollbar-thumb{background:#b9c9ee}
+
 </style>
 </head>
 <body>
@@ -393,7 +448,7 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v7 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v8 Ultra · keys 1-8 switch tabs · ? = shortcuts</small></div>
       <div class="xp-group">Overview</div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <div class="xp-group">Hosting</div>
@@ -421,12 +476,15 @@ footer{background:linear-gradient(180deg,transparent,#070d26);border-top:1px sol
         <span class="tag live" id="xLiveTag">● LIVE SYNC</span>
         <span style="color:var(--mut);font-size:12px" id="xUpdated"></span>
         <span class="xclock" id="xClock"></span>
+        <button class="btn small ghost" id="xThemeBtn" title="Toggle light / dark theme">🌙</button>
+        <button class="btn small ghost" id="xRailBtn" title="Collapse / expand sidebar">↔️</button>
         <select id="xAccent" class="xmini" title="Console accent theme"><option value="blue">🎨 Blue</option><option value="violet">🎨 Violet</option><option value="green">🎨 Mint</option><option value="orange">🎨 Sunset</option></select>
         <button class="btn small ghost" id="xDensity" title="Toggle compact density">🗜️</button>
         <button class="btn small ghost" id="xShortcutsBtn" title="Keyboard shortcuts">?</button>
       </div>
 
       <div data-xpane="overview">
+        <div class="x-welcome"><div class="xw-orb">🛡️</div><div><h3 id="xWelcomeTitle">👋 Welcome back</h3><p id="xWelcomeSub">Loading your command center…</p></div><div class="xw-actions"><button class="btn small" onclick="gotoTab('hosting')">🚀 Host a Bot</button><button class="btn small ghost" onclick="gotoTab('code')">🗂️ Code Hosting</button><button class="btn small ghost" onclick="gotoTab('system');setTimeout(()=>{const b=document.getElementById('xsDiag');if(b)b.click()},120)">🩺 Run Diagnostics</button></div></div>
         <div class="xp-grid" id="xStats"></div>
         <div class="xp-2col">
           <div class="card"><b style="color:#fff">📈 Traffic — last 14 days</b><canvas id="chTraffic" class="chart"></canvas>
@@ -894,7 +952,7 @@ function xLogout(silent){
 $('#xLogout').onclick=()=>xLogout(false);
 $('#xRefresh').onclick=()=>refreshAll();
 let xhLastCheck=0;
-function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name)); const CRUMB={overview:'📊 Overview',bots:'🤖 Bot Manager',hosting:'🚀 Bot Hosting',code:'🗂️ Code Hosting',telegram:'✈️ Telegram Lab',analytics:'📈 Analytics',site:'🎛️ Site Builder',system:'⚙️ System'}; const cr=$('#xCrumb'); if(cr)cr.innerHTML='⌂ › <b>'+(CRUMB[name]||name)+'</b>';$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
+function gotoTab(name){$$('.xp-nav').forEach(x=>x.classList.toggle('on',x.dataset.xtab===name)); const CRUMB={overview:'📊 Overview',bots:'🤖 Bot Manager',hosting:'🚀 Bot Hosting',code:'🗂️ Code Hosting',telegram:'✈️ Telegram Lab',analytics:'📈 Analytics',site:'🎛️ Site Builder',system:'⚙️ System'}; const cr=$('#xCrumb'); if(cr)cr.innerHTML='⌂ › <b>'+(CRUMB[name]||name)+'</b>'; const pn=document.querySelector('[data-xpane="'+name+'"]'); if(pn){pn.classList.remove('pane-in'); void pn.offsetWidth; pn.classList.add('pane-in')}$$('[data-xpane]').forEach(p=>p.classList.toggle('hide',p.dataset.xpane!==name)); if(name==='analytics')drawAnalytics(); if(name==='hosting'&&Date.now()-xhLastCheck>60000&&typeof hostedBots!=='undefined'&&hostedBots.length){xhLastCheck=Date.now();const rb=$('#xhRefreshAll');if(rb)rb.click()} window.scrollTo(0,0); const m=$('.xp-main'); if(m)m.scrollTop=0}
 $$('.xp-nav').forEach(t=>t.onclick=()=>gotoTab(t.dataset.xtab));
 
 /* ---------- charts (zero-dependency canvas) ---------- */
@@ -928,7 +986,7 @@ async function refreshAll(silent){
     const [ov,st,bots]=await Promise.all([xApi('/api/admin?action=overview'),api('/api/stats').catch(()=>({})),api('/api/bots').catch(()=>({bots:[],count:0}))]);
     xAnalytics=ov.analytics||xAnalytics; xAdminBots=ov.admin_bots||[]; xServerCache=bots.bots||[];
     const t=(xAnalytics&&xAnalytics.totals)||{};
-    $('#xStats').innerHTML=[['🤖 Bots (instance)',bots.count??(bots.bots||[]).length],['🛡️ Managed Bots',xAdminBots.length],['💬 Messages (14d)',(t.messages_14d||st.showcase?.messagesPerDay||0).toLocaleString()],['🚀 Deploys (14d)',t.deploys_14d||'—']].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
+    const _days=(xAnalytics&&xAnalytics.days)||[]; const _mx=Math.max(1,..._days.map(d=>d.messages||0)); const _spark='<div class="spark">'+_days.map(d=>'<i style="height:'+Math.max(12,Math.round(100*(d.messages||0)/_mx))+'%"></i>').join('')+'</div>'; $('#xStats').innerHTML=[['🤖 Bots (instance)',bots.count??(bots.bots||[]).length],['🛡️ Managed Bots',xAdminBots.length],['💬 Messages (14d)',(t.messages_14d||st.showcase?.messagesPerDay||0).toLocaleString()],['🚀 Deploys (14d)',t.deploys_14d||'—']].map((x,i)=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s>'+(i>=2?_spark:'')+'</div>').join(''); const _wu=$('#xWelcomeSub'), _wn=sessionStorage.getItem('x_console_user')||'operator'; if(_wu)_wu.textContent='Signed in as '+_wn+' · '+(bots.count??(bots.bots||[]).length)+' instance bots · '+xAdminBots.length+' managed · '+(t.deploys_14d||0)+' deploys in 14d · '+new Date().toLocaleDateString(undefined,{weekday:'long',month:'long',day:'numeric'}); const _wt=$('#xWelcomeTitle'); if(_wt)_wt.textContent='👋 Welcome back, '+_wn;
     $('#xPlatform').textContent=JSON.stringify(ov.platform,null,2);
     $('#xAudit').innerHTML=(ov.audit&&ov.audit.length)?ov.audit.map(a=>'<div class="audit-item"><span>'+new Date(a.at*1000).toLocaleTimeString()+'</span><b>'+esc(a.actor)+'</b> '+esc(a.action)+' <em>'+esc(a.detail||'')+'</em></div>').join(''):'No actions recorded yet.';
     if(!siteDirty||!xFlagsLoaded){fillFlags(ov.flags||{});xFlagsLoaded=true}
@@ -1301,6 +1359,13 @@ window.xcPanelAct=async(id,act)=>{
 $('#xcPanelLoad').onclick=()=>xcPanelLoad();
 let xcPanelTimer=null;
 $('#xcPanelAuto').addEventListener('change',e=>{clearInterval(xcPanelTimer); if(e.target.checked){xcPanelLoad(); xcPanelTimer=setInterval(xcPanelLoad,8000)} toast(e.target.checked?'🔄 Panel auto-refresh on':'⏸ Panel auto-refresh off')});
+/* v8: theme + rail toggles */
+const xPanelEl=$('#xPanel');
+try{ if(localStorage.getItem('x_theme')==='light')xPanelEl.dataset.theme='light'; if(localStorage.getItem('x_rail')==='1')xPanelEl.classList.add('rail'); }catch(e){}
+function xSyncThemeBtn(){const b=$('#xThemeBtn'); if(b)b.textContent=xPanelEl.dataset.theme==='light'?'☀️':'🌙'}
+$('#xThemeBtn').onclick=()=>{ const light=xPanelEl.dataset.theme!=='light'; if(light)xPanelEl.dataset.theme='light'; else xPanelEl.removeAttribute('data-theme'); try{localStorage.setItem('x_theme',light?'light':'dark')}catch(e){} xSyncThemeBtn(); toast(light?'☀️ Light theme on':'🌙 Dark theme on') };
+$('#xRailBtn').onclick=()=>{ xPanelEl.classList.toggle('rail'); try{localStorage.setItem('x_rail',xPanelEl.classList.contains('rail')?'1':'0')}catch(e){} toast('↔️ Sidebar '+(xPanelEl.classList.contains('rail')?'collapsed to rail':'expanded')) };
+xSyncThemeBtn();
 /* ================= console v6 ultra ================= */
 const xClockEl=$('#xClock'); setInterval(()=>{if(xClockEl&&!$('#xPanel').classList.contains('hide'))xClockEl.textContent='🕐 '+new Date().toLocaleTimeString()},1000);
 const accSel=$('#xAccent'); try{const a=localStorage.getItem('x_accent'); if(a&&accSel){$('#xPanel').dataset.accent=a; accSel.value=a}}catch(e){}
