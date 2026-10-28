@@ -162,6 +162,25 @@ class handler(BaseHTTPRequestHandler):
             audit(actor, "clear_state")
             return send(self, {"ok": True})
 
+        if action == "analyze_project":
+            try:
+                from _analyze import _detect
+                files = []
+                for f in (data.get("files") or [])[:80]:
+                    if isinstance(f, dict) and f.get("path"):
+                        files.append({"path": str(f["path"])[:200],
+                                      "content": str(f.get("content") or "")[:120000]})
+                if not files:
+                    return send(self, {"ok": False, "error": "Send at least one file to analyze"}, 400)
+                report = _detect(files)
+                if data.get("start_command"):
+                    report["commands"]["start"] = str(data["start_command"])[:300]
+                    report["custom_start"] = True
+                audit(actor, "analyze_project", f"{report['language']} {report['framework'] or ''} files={len(files)}")
+                return send(self, {"ok": True, "report": report})
+            except Exception as e:
+                return send(self, {"ok": False, "error": f"Analyze failed: {e}"}, 500)
+
         if action == "diagnostics":
             checks = []
             checks.append({"name": "Console credentials configured", "ok": True,

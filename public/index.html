@@ -117,6 +117,13 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 @keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-9px)}40%,80%{transform:translateX(9px)}}
 .dirty-badge{font-size:11px;background:#3a2a0d;color:#ffc857;padding:3px 10px;border-radius:99px;font-weight:700}
 .diag-ok{color:var(--grn)}.diag-bad{color:var(--red)}
+.dropzone{border:2px dashed var(--line);border-radius:13px;padding:20px;text-align:center;color:var(--mut);font-size:13.5px;margin-top:14px;transition:.15s}
+.dropzone.over{border-color:var(--blue);background:#10254a;color:#fff}
+.filelist{margin-top:12px;max-height:190px;overflow:auto;border:1px solid var(--line);border-radius:11px}
+.fileitem{display:flex;justify-content:space-between;gap:8px;padding:8px 12px;font-size:12.8px;cursor:pointer;border-bottom:1px solid #141f3d;color:var(--mut);font-family:ui-monospace,monospace}
+.fileitem:hover{color:#fff}.fileitem.on{background:#10254a;color:#fff}
+.chip{display:inline-block;background:#14224a;color:#9db9ec;border-radius:99px;padding:3px 10px;font-size:11.5px;font-weight:700;margin:2px 2px 2px 0}
+.meter{background:#14224a;border-radius:99px;height:10px;overflow:hidden;margin:6px 0 2px}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--grn))}
 </style>
 </head>
 <body>
@@ -300,10 +307,11 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
   <div class="xp-shell">
     <aside class="xp-side">
       <div class="xp-brand">🛡️ <span>Command Center</span></div>
-      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v4 · keys 1-7 switch tabs</small></div>
+      <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small><small>Console v4 · keys 1-8 switch tabs</small></div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
       <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
+      <button class="xp-nav" data-xtab="code">🗂️ Code Hosting</button>
       <button class="xp-nav" data-xtab="telegram">✈️ Telegram Lab</button>
       <button class="xp-nav" data-xtab="analytics">📈 Analytics</button>
       <button class="xp-nav" data-xtab="site">🎛️ Site Builder</button>
@@ -393,6 +401,47 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
         </div>
         <div class="card mt"><b style="color:#fff">☁️ My Hosted Bots</b><span style="color:var(--mut);font-size:12.5px"> — live status is verified against Telegram</span>
           <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Personality</th><th>Status</th><th>Webhook</th><th>Actions</th></tr></thead><tbody id="xhBots"></tbody></table></div>
+        </div>
+      </div>
+
+      <div data-xpane="code" class="hide">
+        <div class="xp-grid" id="xcStats"></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🗂️ Project Files — any language</b>
+            <label>Project name</label><input id="xcName" placeholder="my-awesome-bot">
+            <div class="flex mt">
+              <label class="btn small" style="cursor:pointer">📁 Add Files<input type="file" id="xcFiles" multiple hidden></label>
+              <label class="btn small ghost" style="cursor:pointer">🗂 Add Folder<input type="file" id="xcFolder" webkitdirectory hidden></label>
+              <select id="xcSample" style="width:auto"><option value="">✨ Load sample…</option><option value="python">🐍 Python (PTB)</option><option value="node">🟢 Node (Telegraf)</option><option value="go">🔵 Go</option><option value="php">🐘 PHP</option><option value="ruby">💎 Ruby</option><option value="bash">🐚 Bash</option></select>
+            </div>
+            <div id="xcDrop" class="dropzone">⬇️ Drag &amp; drop bot files here — .py .js .go .rb .php .java .rs .sh … any language</div>
+            <div id="xcFileList" class="filelist"></div>
+            <div class="flex mt"><input id="xcNewPath" placeholder="new file e.g. helpers/util.py" style="flex:1"><button class="btn small" id="xcAddFile">➕ Add File</button>
+            <button class="btn small danger" id="xcDelFile">🗑 Delete Selected</button></div>
+            <label>Active file: <span id="xcActiveName" style="color:#fff">—</span></label>
+            <textarea class="code" id="xcEditor" spellcheck="false" placeholder="// paste your bot code here, or add files above"></textarea>
+            <label>Environment (.env — BOT_TOKEN goes here)</label><textarea id="xcEnv" rows="2" placeholder="BOT_TOKEN="></textarea>
+            <label>Custom start command (blank = auto-detect)</label><input id="xcStart" placeholder="python bot.py">
+            <div class="flex mt"><button class="btn" id="xcAnalyze">🔍 Analyze Project</button><button class="btn ghost" id="xcSaveProj">💾 Save Project</button></div>
+          </div>
+          <div>
+            <div class="card"><b style="color:#fff">📊 Analysis Report</b><div id="xcReport" class="mt" style="font-size:13.5px;color:var(--mut);line-height:1.75">Add files and press Analyze — language, framework, entry file, dependencies, run mode &amp; risks are detected automatically.</div></div>
+            <div class="card mt"><b style="color:#fff">🚀 Host This Project</b>
+              <p style="color:var(--mut);font-size:13px;line-height:1.7;margin-top:6px"><b style="color:#fff">Any language / polling bots</b> need a real process host — that's the repo's Full Panel. <b style="color:#fff">Webhook Python/Node</b> can also run serverless.</p>
+              <label>Full Panel URL (your server.js / Docker host, blank = download package only)</label><input id="xcPanelUrl" placeholder="https://my-panel.example.com">
+              <label>Full Panel token (only if PANEL_TOKEN is set there)</label><input id="xcPanelToken" type="password" placeholder="optional">
+              <div class="flex mt">
+                <button class="btn" id="xcDeployPanel">🚀 Deploy to Full Panel</button>
+                <button class="btn ghost" id="xcZip">⬇️ Deployment ZIP</button>
+              </div>
+              <div class="flex mt">
+                <button class="btn small ghost" id="xcDockerCopy">📋 Copy Docker Commands</button>
+                <button class="btn small ghost" id="xcWrapper">⚡ Add Vercel Wrapper</button>
+              </div>
+              <pre class="json mt" id="xcOut">Hosting output…</pre>
+            </div>
+            <div class="card mt"><b style="color:#fff">💾 Saved Projects</b><div id="xcSaved" class="mt" style="font-size:13.5px;color:var(--mut)">None yet.</div></div>
+          </div>
         </div>
       </div>
 
@@ -943,14 +992,162 @@ $('#xsDiagCopy').onclick=()=>{if(!xDiagReport){toast('Run diagnostics first');re
 addEventListener('keydown',e=>{
   if($('#xPanel').classList.contains('hide'))return;
   const a=document.activeElement; if(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName))return;
-  const tabs=['overview','bots','hosting','telegram','analytics','site','system'];
-  if(/^[1-7]$/.test(e.key))gotoTab(tabs[+e.key-1]);
+  const tabs=['overview','bots','hosting','code','telegram','analytics','site','system'];
+  if(/^[1-8]$/.test(e.key))gotoTab(tabs[+e.key-1]);
 });
 const xWhoEl=$('#xWho'); if(xWhoEl&&!xWhoEl.dataset.v){xWhoEl.dataset.v=1}
 
+/* ================= code hosting studio (any language) ================= */
+const CKEY='x_code_projects_v1', PKEY='x_panel_cfg_v1';
+let xcFilesArr=[], xcActive=null, xcReport=null, xcProjects={};
+try{xcProjects=JSON.parse(localStorage.getItem(CKEY)||'{}')}catch(e){}
+try{const pc=JSON.parse(localStorage.getItem(PKEY)||'{}'); if(pc.url)setTimeout(()=>{$('#xcPanelUrl').value=pc.url},0)}catch(e){}
+const XC_SAMPLES={
+python:{'bot.py':"import os\nfrom telegram import Update\nfrom telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes\n\nTOKEN=os.environ['BOT_TOKEN']\n\nasync def start(u,c):\n    await u.message.reply_text('👋 Python bot online!')\n\nasync def echo(u,c):\n    await u.message.reply_text(u.message.text)\n\napp=Application.builder().token(TOKEN).build()\napp.add_handler(CommandHandler('start',start))\napp.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND,echo))\napp.run_polling()\n",'requirements.txt':'python-telegram-bot==21.6\n'},
+node:{'index.js':"const { Telegraf } = require('telegraf');\nconst bot = new Telegraf(process.env.BOT_TOKEN);\nbot.start(ctx => ctx.reply('👋 Node bot online!'));\nbot.on('text', ctx => ctx.reply(ctx.message.text));\nbot.launch();\nconsole.log('Telegraf bot running');\n",'package.json':'{\n  "name": "my-bot",\n  "main": "index.js",\n  "dependencies": { "telegraf": "^4.16.3" }\n}\n'},
+go:{'main.go':"package main\n\nimport (\n  \"log\"\n  \"os\"\n  tgbotapi \"github.com/go-telegram-bot-api/telegram-bot-api/v5\"\n)\n\nfunc main(){\n  bot, err := tgbotapi.NewBotAPI(os.Getenv(\"BOT_TOKEN\"))\n  if err != nil { log.Panic(err) }\n  u := tgbotapi.NewUpdate(0)\n  for update := range bot.GetUpdatesChan(u) {\n    if update.Message != nil { bot.Send(tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)) }\n  }\n}\n",'go.mod':'module mybot\n\ngo 1.22\n\nrequire github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1\n'},
+php:{'index.php':"<?php\nrequire 'vendor/autoload.php';\nuse Telegram\\Bot\\Api;\n$telegram = new Api(getenv('BOT_TOKEN'));\n$updates = $telegram->getUpdates();\nforeach ($updates as $u) {\n  $msg = $u->getMessage();\n  if ($msg) $telegram->sendMessage(['chat_id' => $msg->getChat()->getId(), 'text' => $msg->getText()]);\n}\n",'composer.json':'{"require": {"irazasyed/telegram-bot-sdk": "^3.0"}}\n'},
+ruby:{'bot.rb':"require 'telegram/bot'\nTelegram::Bot::Client.run(ENV['BOT_TOKEN']) do |bot|\n  bot.listen do |msg|\n    bot.api.send_message(chat_id: msg.chat.id, text: msg.text)\n  end\nend\n",'Gemfile':"source 'https://rubygems.org'\ngem 'telegram-bot-ruby'\n"},
+bash:{'bot.sh':"#!/bin/bash\n# Minimal Telegram echo loop (curl + jq required)\nTOKEN=\"$BOT_TOKEN\"\nAPI=\"https://api.telegram.org/bot$TOKEN\"\nOFFSET=0\nwhile true; do\n  UPD=$(curl -s \"$API/getUpdates?offset=$OFFSET&timeout=20\")\n  echo \"$UPD\" | grep -o '\"text\":\"[^\"]*\"' | head -1\n  sleep 2\ndone\n"}};
+const LANG_ICON={'py':'🐍','js':'🟢','mjs':'🟢','ts':'🔷','go':'🔵','rb':'💎','php':'🐘','java':'☕','rs':'🦀','sh':'🐚','pl':'🐪','lua':'🌙','cs':'🟣','json':'🧾','txt':'📄','md':'📘','toml':'⚙️','yaml':'⚙️','yml':'⚙️'};
+function xcSyncEditor(){if(xcActive){const f=xcFilesArr.find(x=>x.path===xcActive);if(f)f.content=$('#xcEditor').value}}
+function xcRenderFiles(){
+  $('#xcFileList').innerHTML=xcFilesArr.length?xcFilesArr.map(f=>{const ext=(f.path.split('.').pop()||'').toLowerCase();return '<div class="fileitem'+(f.path===xcActive?' on':'')+'" onclick="xcOpen(\''+f.path.replace(/'/g,"\\'")+'\')"><span>'+(LANG_ICON[ext]||'📄')+' '+esc(f.path)+'</span><span>'+f.content.length+' B</span></div>'}).join(''):'<div class="fileitem">No files yet — add files, load a sample, or paste code below.</div>';
+  $('#xcStats').innerHTML=[['🗂 Files',xcFilesArr.length],['💾 Size',(xcFilesArr.reduce((a,f)=>a+f.content.length,0)/1024).toFixed(1)+' KB'],['🌍 Languages',new Set(xcFilesArr.map(f=>(f.path.split('.').pop()||'').toLowerCase())).size],['📦 Saved Projects',Object.keys(xcProjects).length]].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
+  renderSavedProjects();
+}
+window.xcOpen=p=>{xcSyncEditor();xcActive=p;const f=xcFilesArr.find(x=>x.path===p);$('#xcEditor').value=f?f.content:'';$('#xcActiveName').textContent=p;xcRenderFiles()};
+function xcUpsert(path,content){path=String(path||'').replace(/\\/g,'/').replace(/^\/+/,'').slice(0,200);if(!path)return;const ex=xcFilesArr.find(f=>f.path===path);if(ex)ex.content=content;else xcFilesArr.push({path,content});if(!xcActive)xcOpen(path)}
+async function xcReadFiles(fileList){
+  let added=0,skipped=0;
+  for(const file of [...fileList]){
+    if(file.size>300000){skipped++;continue}
+    let rel=file.webkitRelativePath||file.name; const parts=rel.split('/'); if(parts.length>1)parts.shift(); rel=parts.join('/')||file.name;
+    try{xcUpsert(rel,await file.text());added++}catch(e){skipped++}
+  }
+  xcRenderFiles(); toast('📁 '+added+' file(s) added'+(skipped?' · '+skipped+' skipped (too large/binary)':''));
+}
+$('#xcFiles').addEventListener('change',e=>xcReadFiles(e.target.files));
+$('#xcFolder').addEventListener('change',e=>xcReadFiles(e.target.files));
+const dz=$('#xcDrop');
+['dragover','dragenter'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('over')}));
+['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('over')}));
+dz.addEventListener('drop',e=>xcReadFiles(e.dataTransfer.files));
+$('#xcSample').addEventListener('change',e=>{const s=XC_SAMPLES[e.target.value];if(!s)return;Object.entries(s).forEach(([p,c])=>xcUpsert(p,c));xcOpen(Object.keys(s)[0]);toast('✨ Sample loaded: '+e.target.value)});
+$('#xcAddFile').onclick=()=>{const p=$('#xcNewPath').value.trim();if(!p){toast('Type a file path first');return}xcUpsert(p,$('#xcEditor').value&&xcActive===p?$('#xcEditor').value:'');xcActive=p;$('#xcActiveName').textContent=p;$('#xcEditor').value=(xcFilesArr.find(f=>f.path===p)||{}).content||'';$('#xcNewPath').value='';xcRenderFiles()};
+$('#xcDelFile').onclick=()=>{if(!xcActive){toast('Select a file first');return}xcFilesArr=xcFilesArr.filter(f=>f.path!==xcActive);xcActive=xcFilesArr[0]?xcFilesArr[0].path:null;$('#xcEditor').value=xcActive?(xcFilesArr[0].content):'';$('#xcActiveName').textContent=xcActive||'—';xcRenderFiles()};
+$('#xcEditor').addEventListener('input',()=>{xcSyncEditor();xcRenderFilesSoft()});
+let xcSoftT=null; function xcRenderFilesSoft(){clearTimeout(xcSoftT);xcSoftT=setTimeout(xcRenderFiles,600)}
+$('#xcAnalyze').onclick=async()=>{
+  xcSyncEditor();
+  if(!xcFilesArr.length){toast('Add at least one file first');return}
+  const out=$('#xcReport'); out.textContent='⏳ Analyzing '+xcFilesArr.length+' file(s)…';
+  try{
+    const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'analyze_project',files:xcFilesArr,start_command:$('#xcStart').value.trim()})});
+    xcReport=d.report; renderReport(); toast('🔍 Analysis complete: '+xcReport.language);
+  }catch(e){out.textContent='❌ '+e.message}
+};
+function renderReport(){
+  const r=xcReport; if(!r)return;
+  $('#xcReport').innerHTML=
+   '<div class="flex"><span class="chip">🌍 '+esc(r.language)+'</span>'+(r.framework?'<span class="chip">🧩 '+esc(r.framework)+'</span>':'')+'<span class="chip">▶ '+esc(r.mode)+'</span><span class="chip">📄 '+r.file_count+' files</span></div>'
+  +'<div style="margin-top:10px">Deploy readiness</div><div class="meter"><i style="width:'+r.readiness+'%"></i></div><b style="color:#fff">'+r.readiness+'%</b>'
+  +'<div style="margin-top:8px">🎯 Entry: <span class="kbd">'+esc(r.entry||'not detected')+'</span><br>🏁 Start: <span class="kbd">'+esc(r.commands.start||'—')+'</span>'+(r.commands.install?'<br>📦 Install: <span class="kbd">'+esc(r.commands.install)+'</span>':'')+'</div>'
+  +(r.dependencies&&r.dependencies.length?'<div style="margin-top:8px">📚 Dependencies<br>'+r.dependencies.map(d=>'<span class="chip">'+esc(d)+'</span>').join('')+'</div>':'')
+  +'<div style="margin-top:8px">✅ Full Panel (any language): <b style="color:var(--grn)">Yes</b> · 🐳 Docker/VPS: <b style="color:var(--grn)">Yes</b> · ⚡ Vercel webhook: <b style="color:'+(r.compatibility.vercel_webhook?'var(--grn)':'#ffc857')+'">'+(r.compatibility.vercel_webhook?'Yes':'Not directly')+'</b><br><span style="font-size:12.3px">'+esc(r.compatibility.vercel_reason||'')+'</span></div>'
+  +(r.warnings&&r.warnings.length?'<div style="margin-top:8px;color:#ffc857">'+r.warnings.map(w=>'⚠ '+esc(w)).join('<br>')+'</div>':'<div style="margin-top:8px;color:var(--grn)">✅ No risks detected</div>');
+}
+/* ---- minimal stored-ZIP writer (no deps) ---- */
+const CRC_TABLE=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+function crc32(u8){let c=0xFFFFFFFF;for(let i=0;i<u8.length;i++)c=CRC_TABLE[(c^u8[i])&0xFF]^(c>>>8);return (c^0xFFFFFFFF)>>>0}
+function makeZipBlob(files){
+  const enc=new TextEncoder(); const chunks=[]; const central=[]; let offset=0;
+  const u16=n=>new Uint8Array([n&255,(n>>8)&255]); const u32=n=>new Uint8Array([n&255,(n>>8)&255,(n>>16)&255,(n>>24)&255]);
+  const push=a=>{chunks.push(a);offset+=a.length};
+  for(const f of files){
+    const name=enc.encode(f.path); const data=enc.encode(f.content||''); const crc=crc32(data);
+    const local=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0)]);
+    central.push({name,crc,size:data.length,offset});
+    push(local); push(name); push(data);
+  }
+  const cdStart=offset;
+  for(const c of central){
+    push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(c.crc),...u32(c.size),...u32(c.size),...u16(c.name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(c.offset)])); push(c.name);
+  }
+  push(new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(central.length),...u16(central.length),...u32(offset-cdStart),...u32(cdStart),...u16(0)]));
+  return new Blob(chunks,{type:'application/zip'});
+}
+function projectPackageFiles(){
+  xcSyncEditor();
+  const files=[...xcFilesArr];
+  if(xcReport){
+    const g=xcReport.generated||{};
+    if(g.Dockerfile&&!files.some(f=>f.path==='Dockerfile'))files.push({path:'Dockerfile',content:g.Dockerfile});
+    if(g.Procfile&&!files.some(f=>f.path==='Procfile'))files.push({path:'Procfile',content:g.Procfile});
+    files.push({path:'pytelehost.json',content:JSON.stringify(g.manifest||xcReport,null,2)});
+    files.push({path:'DEPLOY.md',content:'# Deploy this bot\n\nLanguage: '+xcReport.language+'\nEntry: '+(xcReport.entry||'-')+'\nStart: '+(xcReport.commands.start||'-')+'\nMode: '+xcReport.mode+'\n\n## Full Panel (any language, 24/7 processes)\nRun this repo, open the classic panel, upload this ZIP, press Deploy.\n\n## Docker\n```bash\ndocker build -t mybot .\ndocker run -d --restart always -e BOT_TOKEN=xxx mybot\n```\n'});
+  }
+  if($('#xcEnv').value.trim())files.push({path:'.env.example',content:$('#xcEnv').value});
+  return files;
+}
+function downloadZip(){
+  if(!xcFilesArr.length){toast('Add files first');return}
+  const name=($('#xcName').value.trim()||'telegram-bot')+'.zip';
+  const a=document.createElement('a'); a.href=URL.createObjectURL(makeZipBlob(projectPackageFiles())); a.download=name; a.click();
+  $('#xcOut').textContent='⬇️ Downloaded '+name+' — upload it into the Full Panel, or unzip & docker build.';
+}
+$('#xcZip').onclick=downloadZip;
+$('#xcDockerCopy').onclick=()=>{const cmd='docker build -t mybot .\ndocker run -d --restart always --name mybot -e BOT_TOKEN=YOUR_TOKEN mybot\ndocker logs -f mybot';navigator.clipboard.writeText(cmd);toast('📋 Docker commands copied')};
+$('#xcWrapper').onclick=()=>{
+  if(!xcReport){toast('Analyze first so I know the language');return}
+  if(xcReport.runtime==='python'){xcUpsert('VERCEL_WEBHOOK.py',"# Vercel serverless webhook version\n# 1) Move your message-handling logic into handle(text, chat_id)\n# 2) Deploy this file as api/webhook.py in a Vercel project\n# Original project mode: "+xcReport.mode+" (polling code must be adapted: Telegram calls this per update, no loop)\nimport json, os, urllib.request\nfrom http.server import BaseHTTPRequestHandler\n\ndef handle(text, chat_id, name='friend'):\n    return f'🔁 {text}'\n\nclass handler(BaseHTTPRequestHandler):\n    def do_POST(self):\n        n=int(self.headers.get('Content-Length') or 0)\n        u=json.loads(self.rfile.read(n) or b'{}')\n        m=u.get('message') or {}\n        chat=(m.get('chat') or {}).get('id')\n        token=os.environ.get('BOT_TOKEN','')\n        reply=handle(m.get('text',''), chat, (m.get('from') or {}).get('first_name','friend'))\n        data=json.dumps({'chat_id':chat,'text':reply}).encode()\n        urllib.request.urlopen(urllib.request.Request(f'https://api.telegram.org/bot{token}/sendMessage',data=data,headers={'Content-Type':'application/json'}))\n        self.send_response(200); self.end_headers(); self.wfile.write(b'{\"ok\":true}')\n")}
+  else if(xcReport.runtime==='node'){xcUpsert('VERCEL_WEBHOOK.js',"// Vercel serverless webhook (Node) — adapt your handlers into handle()\n// Deploy as api/webhook.js, set BOT_TOKEN env, then setWebhook to /api/webhook.js\nfunction handle(text, chatId, name = 'friend') { return `🔁 ${text}`; }\nmodule.exports = async (req, res) => {\n  const m = (req.body && req.body.message) || {};\n  const chatId = m.chat && m.chat.id;\n  const reply = handle(m.text || '', chatId, (m.from || {}).first_name || 'friend');\n  await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: chatId, text: reply }) });\n  res.status(200).json({ ok: true });\n};\n")}
+  else{toast('⚡ Wrapper is for Python/Node webhook conversion — this project should use Full Panel/Docker');return}
+  xcRenderFiles(); $('#xcOut').textContent='⚡ Webhook wrapper added to the project files. Review it, then ZIP & deploy, adapting your handlers into handle().';
+};
+$('#xcDeployPanel').onclick=async()=>{
+  xcSyncEditor();
+  const out=$('#xcOut'), panelUrl=$('#xcPanelUrl').value.trim().replace(/\/+$/,'');
+  localStorage.setItem(PKEY,JSON.stringify({url:panelUrl}));
+  if(!xcFilesArr.length){out.textContent='Add project files first.';return}
+  if(!xcReport){out.textContent='⏳ Analyzing first…'; $('#xcAnalyze').click(); await new Promise(r=>setTimeout(r,600)); if(!xcReport){out.textContent='Analyze the project first, then deploy.';return}}
+  if(!panelUrl){downloadZip(); out.textContent='📦 No Full Panel URL set — downloaded the deployment ZIP instead.\n\nTo host for real (any language):\n1) Run this repo (Docker / npm start) on a VPS or PC\n2) Open its classic panel\n3) Upload the ZIP → Deploy — it supervises your bot 24/7\n4) Paste that panel URL above for one-click deploys next time.'; return}
+  out.textContent='⏳ Packaging & deploying to '+panelUrl+' …';
+  try{
+    const form=new FormData();
+    form.append('file', makeZipBlob(projectPackageFiles()), ($('#xcName').value.trim()||'telegram-bot')+'.zip');
+    form.append('name', $('#xcName').value.trim()||'telegram-bot');
+    form.append('env', $('#xcEnv').value);
+    if(xcReport.commands.start)form.append('startCmd', xcReport.commands.start);
+    if(xcReport.runtime)form.append('runtime', xcReport.runtime);
+    const headers={}; const pt=$('#xcPanelToken').value.trim(); if(pt)headers['X-Panel-Token']=pt;
+    const r=await fetch(panelUrl+'/api/bots',{method:'POST',body:form,headers});
+    let d={}; try{d=await r.json()}catch(e){}
+    if(!r.ok)throw new Error(d.error||('Panel HTTP '+r.status));
+    out.textContent='🎉 DEPLOYED to Full Panel!\nBot: '+(d.bot.name||'')+' · '+(d.bot.runtime||xcReport.language)+' · entry '+(d.bot.entry||xcReport.entry||'-')+'\nStatus: '+(d.bot.status||'starting')+' — it is being installed & supervised 24/7 by the panel.\nManage it at: '+panelUrl;
+    toast('🎉 Bot deployed to Full Panel & starting!');
+  }catch(e){out.textContent='❌ Deploy failed: '+e.message+'\nCheck: panel is running, URL is correct/reachable from your browser, PANEL_TOKEN matches. Tip: download the ZIP and upload it manually in the panel.'}
+};
+/* saved projects */
+function renderSavedProjects(){
+  const el=$('#xcSaved'); if(!el)return;
+  const names=Object.keys(xcProjects);
+  el.innerHTML=names.length?names.map(n=>'<div class="xrow"><span>📦 '+esc(n)+' <small style="color:var(--mut)">'+xcProjects[n].files.length+' files · '+new Date(xcProjects[n].at).toLocaleDateString()+'</small></span><span class="flex"><button class="btn small ghost" onclick="xcLoadProj(\''+n.replace(/'/g,"\\'")+'\')">Load</button><button class="btn small danger" onclick="xcDelProj(\''+n.replace(/'/g,"\\'")+'\')">Delete</button></span></div>').join(''):'None yet — analyze & save your first project.';
+}
+$('#xcSaveProj').onclick=()=>{
+  xcSyncEditor();
+  const name=($('#xcName').value.trim()||'telegram-bot');
+  try{xcProjects[name]={files:xcFilesArr,env:$('#xcEnv').value,start:$('#xcStart').value,at:Date.now()};localStorage.setItem(CKEY,JSON.stringify(xcProjects));xcRenderFiles();toast('💾 Project saved: '+name)}
+  catch(e){toast('❌ Save failed (storage full?)')}
+};
+window.xcLoadProj=n=>{const p=xcProjects[n];if(!p)return;xcFilesArr=p.files||[];xcActive=xcFilesArr[0]?xcFilesArr[0].path:null;$('#xcName').value=n;$('#xcEnv').value=p.env||'';$('#xcStart').value=p.start||'';$('#xcEditor').value=xcActive?xcFilesArr[0].content:'';$('#xcActiveName').textContent=xcActive||'—';xcReport=null;$('#xcReport').textContent='Project loaded — press Analyze.';xcRenderFiles()};
+window.xcDelProj=n=>{if(!confirm('Delete saved project '+n+'?'))return;delete xcProjects[n];localStorage.setItem(CKEY,JSON.stringify(xcProjects));xcRenderFiles()};
+xcUpsert('bot.py', XC_SAMPLES.python['bot.py']); xcUpsert('requirements.txt', XC_SAMPLES.python['requirements.txt']); xcOpen('bot.py');
+
+
 /* command palette */
 const PALETTE=[
- ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
+ ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🗂️ Code Hosting',()=>gotoTab('code')],['⬇️ Deployment ZIP',()=>gotoTab('code')],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
  ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
  ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['🔬 Run Full Diagnostics',()=>{gotoTab('system');runDiagnostics()}],['🚀 Bot Hosting',()=>gotoTab('hosting')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
  ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],

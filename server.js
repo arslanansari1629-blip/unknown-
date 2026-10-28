@@ -935,6 +935,13 @@ app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
   res.setHeader('Cache-Control', 'no-store');
+  // CORS: lets the Vercel admin console deploy projects straight into this
+  // Full Panel ("Deploy to Full Panel" in Code Hosting). PANEL_TOKEN still
+  // gates every /api call when set.
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Panel-Token');
+  if (req.method === 'OPTIONS') return res.status(204).end();
   next();
 });
 
@@ -1560,6 +1567,45 @@ app.post('/api/admin', async (req, res, next) => {
     if (action === 'clear_audit') { adminAudit.length = 0; return res.json({ ok: true }); }
     if (action === 'import_state') { const f = (req.body.state && req.body.state.flags) || req.body.flags || {}; for (const k of Object.keys(siteFlags)) if (k in f) siteFlags[k] = f[k]; adminAuditLog(s.u, 'import_state'); return res.json({ ok: true, flags: siteFlags }); }
     if (action === 'clear_state') { (global.__adminBots || new Map()).clear(); adminAudit.length = 0; adminAuditLog(s.u, 'clear_state'); return res.json({ ok: true }); }
+    if (action === 'analyze_project') {
+      const files = (req.body.files || []).slice(0, 80).filter((f) => f && f.path).map((f) => ({ path: String(f.path).slice(0, 200), content: String(f.content || '').slice(0, 120000) }));
+      if (!files.length) return res.status(400).json({ ok: false, error: 'Send at least one file to analyze' });
+      const names = files.map((f) => f.path.replace(/\\/g, '/'));
+      const lower = names.map((n) => n.toLowerCase());
+      const top = lower.filter((n) => !n.includes('/'));
+      const blob = files.map((f) => f.content).join('\n');
+      const endswith = (s) => lower.some((n) => n.endsWith(s));
+      let runtime = 'custom';
+      if (top.includes('requirements.txt') || endswith('.py')) runtime = 'python';
+      else if (top.includes('package.json') || endswith('.js')) runtime = 'node';
+      else if (endswith('.ts')) runtime = 'deno';
+      else if (endswith('.rb')) runtime = 'ruby';
+      else if (endswith('.php')) runtime = 'php';
+      else if (top.includes('go.mod') || endswith('.go')) runtime = 'go';
+      else if (top.includes('cargo.toml') || endswith('.rs')) runtime = 'rust';
+      else if (endswith('.java') || endswith('.jar')) runtime = 'java';
+      else if (endswith('.cs')) runtime = 'dotnet';
+      else if (endswith('.sh')) runtime = 'bash';
+      else if (endswith('.pl')) runtime = 'perl';
+      else if (endswith('.lua')) runtime = 'lua';
+      const ENTRIES = { python: ['bot.py', 'main.py', 'app.py', 'index.py'], node: ['index.js', 'bot.js', 'main.js', 'app.js'], deno: ['index.ts', 'main.ts'], ruby: ['bot.rb', 'main.rb'], php: ['index.php', 'bot.php'], go: ['main.go'], rust: ['src/main.rs', 'main.rs'], bash: ['start.sh', 'run.sh', 'bot.sh'], perl: ['bot.pl', 'main.pl'], lua: ['bot.lua', 'main.lua'] };
+      const entry = (ENTRIES[runtime] || []).map((c) => names.find((n) => n.toLowerCase() === c || n.toLowerCase().endsWith('/' + c))).find(Boolean) || null;
+      const FW = [['python-telegram-bot', /from telegram|Application\.builder/], ['aiogram', /aiogram/], ['Telethon', /telethon/], ['Pyrogram', /pyrogram/], ['Telegraf (Node)', /telegraf/], ['grammY (Node)', /grammy/i], ['node-telegram-bot-api', /node-telegram-bot-api/], ['Go Telegram Bot API', /telegram-bot-api/], ['Teloxide (Rust)', /teloxide/]];
+      const framework = (FW.find(([, re]) => re.test(blob)) || [null])[0];
+      const polling = /run_polling|start_polling|run_until_disconnected|infinity_polling|bot\.launch/.test(blob);
+      const webhook = /setWebhook|run_webhook|FastAPI|Flask|express\(|createServer/.test(blob);
+      const mode = webhook && !polling ? 'webhook' : polling ? 'polling' : 'long-running';
+      const STARTS = { python: `python ${entry || 'bot.py'}`, node: `node ${entry || 'index.js'}`, deno: `deno run --allow-all ${entry || 'index.ts'}`, ruby: `ruby ${entry || 'bot.rb'}`, php: `php ${entry || 'index.php'}`, go: 'go run .', rust: 'cargo run --release', java: 'java -jar app.jar', dotnet: 'dotnet run', bash: `bash ${entry || 'start.sh'}`, perl: `perl ${entry || 'bot.pl'}`, lua: `lua ${entry || 'bot.lua'}` };
+      const warnings = [];
+      if (/\b\d{6,12}:[A-Za-z0-9_-]{30,}\b/.test(blob)) warnings.push('A bot-token-looking string is hardcoded in code — move it to BOT_TOKEN env var.');
+      if (!entry) warnings.push('No clear entry file found — set a custom start command.');
+      if (!/BOT_TOKEN|process\.env|environ|getenv/.test(blob)) warnings.push('No BOT_TOKEN env usage detected.');
+      const IMG = { python: 'python:3.12-slim', node: 'node:20-slim', deno: 'denoland/deno:1.46', ruby: 'ruby:3.3-slim', php: 'php:8.3-cli', go: 'golang:1.22-alpine', rust: 'rust:1.80-slim', bash: 'ubuntu:24.04' };
+      const start = String(req.body.start_command || STARTS[runtime] || '').slice(0, 300);
+      const report = { runtime, language: runtime, entry, framework, dependencies: [], manifests: names.filter((n) => /requirements\.txt|package\.json|go\.mod|Cargo\.toml|Gemfile|composer\.json|deno\.json/.test(n)), mode, file_count: files.length, total_bytes: blob.length, warnings, readiness: Math.max(5, Math.min(100, 40 + (entry ? 20 : 0) + (framework ? 15 : 0) + 15 - warnings.length * 5)), compatibility: { full_panel: true, docker_vps: true, vercel_webhook: ['python', 'node'].includes(runtime) && mode === 'webhook', vercel_reason: 'Webhook-ready Python/Node' }, commands: { install: runtime === 'python' ? 'pip install -r requirements.txt' : runtime === 'node' ? 'npm install' : '', start }, generated: { Dockerfile: `FROM ${IMG[runtime] || 'ubuntu:24.04'}\nWORKDIR /app\nCOPY . .\nCMD ["sh","-c","${start}"]\n`, Procfile: `worker: ${start}\n`, manifest: { runtime, entry, framework, start, mode } } };
+      adminAuditLog(s.u, 'analyze_project', `${runtime} files=${files.length}`);
+      return res.json({ ok: true, report });
+    }
     if (action === 'diagnostics') {
       let tgOk = true; try { const r = await tgApi('0:diagnostic', 'getMe'); tgOk = !/Could not|ENOTFOUND|timeout/i.test(r.description || ''); } catch { tgOk = false; }
       const checks = [
