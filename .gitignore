@@ -14,3 +14,7 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
+
+# python (Vercel serverless api/)
+__pycache__/
+*.pyc
