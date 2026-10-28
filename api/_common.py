@@ -1,9 +1,13 @@
 """PyTeleHost Ultra - shared helpers for Vercel Python serverless functions.
 Files starting with _ are not exposed as routes by Vercel.
 """
+import base64
+import hashlib
+import hmac
 import json
 import os
 import re
+import time
 import urllib.request
 import urllib.error
 
@@ -20,7 +24,7 @@ def send(handler, payload, status=200):
     handler.send_header("Content-Length", str(len(body)))
     handler.send_header("Access-Control-Allow-Origin", "*")
     handler.send_header("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS")
-    handler.send_header("Access-Control-Allow-Headers", "Content-Type")
+    handler.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
     handler.send_header("X-Powered-By", "PyTeleHost Ultra (Python on Vercel)")
     handler.end_headers()
     handler.wfile.write(body)
@@ -55,6 +59,64 @@ def host_of(handler):
 
 def valid_token(token):
     return bool(token and TOKEN_RE.match(str(token).strip()))
+
+
+"""Console authentication.
+
+Credentials live ONLY in server-side environment variables
+(ADMIN_USERNAME / ADMIN_PASSWORD, set in the Vercel dashboard) - they are
+never present in frontend code, HTML, or API responses. Sessions are
+stateless HMAC-signed tokens (2h) keyed by the server-side secret.
+"""
+
+
+def _admin_user():
+    return os.environ.get("ADMIN_USERNAME", "")
+
+
+def _admin_pass():
+    return os.environ.get("ADMIN_PASSWORD", "")
+
+
+def admin_configured():
+    return bool(_admin_user() and _admin_pass())
+
+
+def _signing_key():
+    return hashlib.sha256(f"{_admin_user()}:{_admin_pass()}".encode()).digest()
+
+
+def check_credentials(username, password):
+    if not admin_configured():
+        return False
+    return (hmac.compare_digest(str(username or ""), _admin_user())
+            and hmac.compare_digest(str(password or ""), _admin_pass()))
+
+
+def issue_session(username):
+    payload = {"u": username, "role": "super-admin",
+               "exp": int(time.time()) + 2 * 3600, "iat": int(time.time())}
+    raw = base64.urlsafe_b64encode(json.dumps(payload).encode()).decode().rstrip("=")
+    sig = hmac.new(_signing_key(), raw.encode(), hashlib.sha256).hexdigest()
+    return f"{raw}.{sig}", payload["exp"]
+
+
+def verify_session(handler):
+    """Return session payload dict, or None. Expects 'Authorization: Bearer …'."""
+    auth = handler.headers.get("Authorization") or ""
+    if not auth.startswith("Bearer ") or not admin_configured():
+        return None
+    try:
+        raw, sig = auth[7:].strip().rsplit(".", 1)
+        expected = hmac.new(_signing_key(), raw.encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        payload = json.loads(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+        if int(payload.get("exp", 0)) < int(time.time()):
+            return None
+        return payload
+    except Exception:
+        return None
 
 
 def telegram(token, method, payload=None, timeout=10):

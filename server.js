@@ -1441,6 +1441,118 @@ app.get('/api/bots/:id/telegram', async (req, res, next) => {
   }
 });
 
+/* ---------------- Restricted console (env credentials only) -------------- */
+// Credentials come ONLY from ADMIN_USERNAME / ADMIN_PASSWORD env vars —
+// never from code or the frontend. Sessions: HMAC-signed tokens (2h),
+// same format as api/admin_login.py.
+const ADMIN_USER = process.env.ADMIN_USERNAME || '';
+const ADMIN_PASS = process.env.ADMIN_PASSWORD || '';
+const adminConfigured = () => !!(ADMIN_USER && ADMIN_PASS);
+const siteFlags = global.__siteFlags || (global.__siteFlags = {
+  maintenance: false, registrations_open: true, announcement: '', site_title: '',
+  default_framework: '', default_region: '', show_templates: true, show_pricing: true, show_faq: true,
+});
+const adminAudit = global.__adminAudit || (global.__adminAudit = []);
+const adminAttempts = new Map();
+function signSession(username) {
+  const payload = { u: username, role: 'super-admin', exp: Math.floor(Date.now() / 1000) + 7200, iat: Math.floor(Date.now() / 1000) };
+  const raw = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const key = crypto.createHash('sha256').update(`${ADMIN_USER}:${ADMIN_PASS}`).digest();
+  const sig = crypto.createHmac('sha256', key).update(raw).digest('hex');
+  return { token: `${raw}.${sig}`, exp: payload.exp };
+}
+function verifySession(req) {
+  if (!adminConfigured()) return null;
+  const auth = req.get('authorization') || '';
+  if (!auth.startsWith('Bearer ')) return null;
+  const [raw, sig] = auth.slice(7).trim().split('.');
+  if (!raw || !sig) return null;
+  const key = crypto.createHash('sha256').update(`${ADMIN_USER}:${ADMIN_PASS}`).digest();
+  const expected = crypto.createHmac('sha256', key).update(raw).digest('hex');
+  try {
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
+    const payload = JSON.parse(Buffer.from(raw, 'base64url').toString());
+    return payload.exp > Date.now() / 1000 ? payload : null;
+  } catch { return null; }
+}
+function adminAuditLog(actor, action, detail = '') {
+  adminAudit.unshift({ at: Math.floor(Date.now() / 1000), actor, action, detail: String(detail).slice(0, 200) });
+  adminAudit.length = Math.min(adminAudit.length, 200);
+}
+app.post('/api/admin_login', (req, res) => {
+  if (!adminConfigured()) return res.status(503).json({ ok: false, error: 'Console is not configured on this deployment.' });
+  const ip = req.ip || 'local';
+  const now = Date.now();
+  const tries = (adminAttempts.get(ip) || []).filter((t) => now - t < 300000);
+  if (tries.length >= 5) return res.status(429).json({ ok: false, error: 'Too many attempts. Try again in a minute.' });
+  const { username, password } = req.body || {};
+  const ok = username && password
+    && crypto.timingSafeEqual(Buffer.from(String(username).padEnd(64, '\0').slice(0, 64)), Buffer.from(ADMIN_USER.padEnd(64, '\0').slice(0, 64)))
+    && crypto.timingSafeEqual(Buffer.from(String(password).padEnd(64, '\0').slice(0, 64)), Buffer.from(ADMIN_PASS.padEnd(64, '\0').slice(0, 64)));
+  if (!ok) { tries.push(now); adminAttempts.set(ip, tries); return res.status(401).json({ ok: false, error: 'Invalid credentials.' }); }
+  adminAttempts.delete(ip);
+  const { token, exp } = signSession(String(username));
+  res.json({ ok: true, token, expires_at: exp, user: String(username), role: 'super-admin', permissions: ['*'] });
+});
+app.get('/api/admin', (req, res) => {
+  if (req.query.action === 'public_config') return res.json({ ok: true, flags: siteFlags });
+  const s = verifySession(req);
+  if (!s) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  res.json({
+    ok: true, session: s,
+    platform: { runtime: `Node ${process.version} (full panel)`, python: 'supervised', region: 'local', instance_uptime_s: Math.floor((Date.now() - PANEL_STARTED) / 1000), admin_configured: true },
+    flags: siteFlags, audit: adminAudit.slice(0, 50),
+    bots: [...bots.values()].map((b) => publicBot(b)),
+  });
+});
+app.post('/api/admin', async (req, res, next) => {
+  const s = verifySession(req);
+  if (!s) return res.status(401).json({ ok: false, error: 'Unauthorized' });
+  const { action } = req.body || {};
+  try {
+    if (action === 'set_flags') {
+      const f = req.body.flags || {};
+      for (const k of ['maintenance', 'registrations_open', 'show_templates', 'show_pricing', 'show_faq']) if (k in f) siteFlags[k] = !!f[k];
+      for (const k of ['announcement', 'site_title', 'default_framework', 'default_region']) if (k in f) siteFlags[k] = String(f[k]).slice(0, 300);
+      adminAuditLog(s.u, 'set_flags', JSON.stringify(siteFlags));
+      return res.json({ ok: true, flags: siteFlags });
+    }
+    if (action === 'clear_audit') { adminAudit.length = 0; return res.json({ ok: true }); }
+    if (['bot_start', 'bot_stop', 'bot_restart', 'bot_delete'].includes(action)) {
+      const bot = bots.get(String(req.body.id || ''));
+      if (!bot) return next(httpError(404, 'Bot not found'));
+      if (action === 'bot_start') startBot(bot).catch((e) => logBot(bot, 'err', e.message));
+      if (action === 'bot_stop') await stopBot(bot, { force: true });
+      if (action === 'bot_restart') await restartBot(bot).catch(() => {});
+      if (action === 'bot_delete') {
+        try { await stopBot(bot, { force: true }); } catch { /* ignore */ }
+        bots.delete(bot.meta.id);
+        try { fs.rmSync(bot.dir, { recursive: true, force: true }); } catch { /* ignore */ }
+        sendWs({ type: 'deleted', id: bot.meta.id });
+      }
+      adminAuditLog(s.u, action, bot.meta.id);
+      return res.json({ ok: true });
+    }
+    if (['validate', 'webhook_info', 'webhook_set', 'webhook_delete'].includes(action)) {
+      const token = String(req.body.token || '').trim();
+      if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) return res.status(400).json({ ok: false, error: 'Valid bot token required' });
+      const method = { validate: 'getMe', webhook_info: 'getWebhookInfo', webhook_delete: 'deleteWebhook', webhook_set: 'setWebhook' }[action];
+      const payload = action === 'webhook_delete' ? { drop_pending_updates: true }
+        : action === 'webhook_set' ? { url: req.body.webhook_url || `${req.protocol}://${req.get('host')}/api/webhook?token=${encodeURIComponent(token)}`, drop_pending_updates: true } : {};
+      const data = await new Promise((resolve, reject) => {
+        const body = JSON.stringify(payload);
+        const r2 = https.request(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', timeout: 10000, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, (r) => {
+          let b = ''; r.on('data', (d) => { b += d; }); r.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid Telegram response')); } });
+        });
+        r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout'))); r2.on('error', reject); r2.write(body); r2.end();
+      });
+      adminAuditLog(s.u, action);
+      return res.json({ ok: !!data.ok, telegram: data, webhook_url: payload.url });
+    }
+    return res.status(400).json({ ok: false, error: 'Unknown action' });
+  } catch (e) { next(e); }
+});
+
 /* -------------------- PyTeleHost Ultra (Vercel parity) ------------------ */
 // Same token check the Python serverless API (/api/validate_token) performs,
 // so the Ultra frontend works identically on this Node stack.

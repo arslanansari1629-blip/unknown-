@@ -44,6 +44,16 @@ panel (polling bots, file manager, WebSocket logs) stays at `/`.
 > code (`run_polling` / `start_polling`) use this repo's `server.js` / Docker stack,
 > which supervises processes with auto-restart forever.
 
+### 🛡️ Restricted operator console
+
+A hidden, full-control console (platform overview, bot registry, webhook control
+for any bot, site-wide maintenance/announcement/section flags, danger-zone actions,
+audit log) is built in. It is **not linked or referenced anywhere in the UI** and
+credentials are never in code: set `ADMIN_USERNAME` / `ADMIN_PASSWORD` as encrypted
+environment variables (Vercel project settings, or your shell for `server.js`).
+Sessions are HMAC-signed, expire after 2 hours, and sign-in is rate-limited.
+APIs: `POST /api/admin_login`, `GET|POST /api/admin` (Bearer session).
+
 ---
 
 ## ✨ Features

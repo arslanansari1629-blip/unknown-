@@ -7,7 +7,7 @@ whether or not this registry remembers it.
 """
 import sys, os, hashlib, time
 sys.path.insert(0, os.path.dirname(__file__))
-from _common import send, read_json, query_of, valid_token, telegram, host_of
+from _common import send, read_json, query_of, valid_token, telegram, host_of, verify_session
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import quote
 
@@ -61,6 +61,9 @@ class handler(BaseHTTPRequestHandler):
                     "next": "Call POST /api/set_webhook {token} or tick 'Set webhook now' in the console."})
 
     def do_DELETE(self):
+        # Registry removal is a console-only operation (Bearer session).
+        if not verify_session(self):
+            return send(self, {"ok": False, "error": "Unauthorized"}, 401)
         q = query_of(self)
         REGISTRY.pop(q.get("id", ""), None)
         send(self, {"ok": True})
