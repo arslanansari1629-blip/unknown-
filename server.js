@@ -1441,6 +1441,32 @@ app.get('/api/bots/:id/telegram', async (req, res, next) => {
   }
 });
 
+/* --------------- Hosted bot brain (webhook, Node parity) ---------------- */
+function brainReply(text, preset, firstName) {
+  const t = String(text || '').trim();
+  if (preset === 'echo') return t.startsWith('/start') ? `🔁 Echo bot ready, ${firstName}!` : (t || '📎 Send me text.');
+  if (preset === 'menu') return '👋 Welcome! Use: About · Services · Contact — or /help. Hosted 24/7 ⚡';
+  if (t.startsWith('/ping')) return '🏓 Pong!';
+  if (t.startsWith('/help')) return '⚡ /start /help /ping /echo /id /about';
+  if (t.startsWith('/echo')) return t.slice(5).trim() || 'Usage: /echo hi';
+  if (preset === 'assistant' && /price|pricing|cost/i.test(t)) return '💎 Hobby free · Pro $5/mo · Fleet $15/mo';
+  if (preset === 'assistant' && /support|help|problem/i.test(t)) return '🛠 Describe your issue here — we reply fast!';
+  if (t.startsWith('/start')) return `👋 Hello ${firstName}! I am alive on PyTeleHost Ultra (preset: ${preset}).`;
+  return t ? `🔁 ${t}` : '📎 I received that!';
+}
+app.get('/api/webhook', (req, res) => res.json({ ok: true, service: 'PyTeleHost Ultra webhook brain (Node parity)', presets: ['standard', 'echo', 'menu', 'assistant'], usage: 'POST updates to /api/webhook?token=<BOT_TOKEN>&preset=standard' }));
+app.post('/api/webhook', async (req, res) => {
+  const token = String(req.query.token || '');
+  const preset = ['standard', 'echo', 'menu', 'assistant'].includes(req.query.preset) ? req.query.preset : 'standard';
+  const msg = (req.body && (req.body.message || req.body.edited_message)) || {};
+  const chatId = msg.chat && msg.chat.id;
+  if (!chatId) return res.json({ ok: true, ignored: true });
+  const reply = brainReply(msg.text, preset, (msg.from && msg.from.first_name) || 'friend');
+  if (!token || req.query.demo) return res.json({ ok: true, demo: !token, preset, would_send: [{ method: 'sendMessage', payload: { chat_id: chatId, text: reply } }] });
+  try { const r = await tgApi(token, 'sendMessage', { chat_id: chatId, text: reply }); return res.json({ ok: !!r.ok, preset, sent: [{ method: 'sendMessage', ok: !!r.ok }] }); }
+  catch (e) { return res.status(502).json({ ok: false, error: e.message }); }
+});
+
 /* ---------------- Restricted console (env credentials only) -------------- */
 // Credentials come ONLY from ADMIN_USERNAME / ADMIN_PASSWORD env vars —
 // never from code or the frontend. Sessions: HMAC-signed tokens (2h),
@@ -1476,6 +1502,15 @@ function verifySession(req) {
     const payload = JSON.parse(Buffer.from(raw, 'base64url').toString());
     return payload.exp > Date.now() / 1000 ? payload : null;
   } catch { return null; }
+}
+function tgApi(token, method, payload = {}) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const r2 = https.request(`https://api.telegram.org/bot${token}/${method}`, { method: 'POST', timeout: 10000, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, (r) => {
+      let b = ''; r.on('data', (d) => { b += d; }); r.on('end', () => { try { resolve(JSON.parse(b)); } catch { reject(new Error('Invalid Telegram response')); } });
+    });
+    r2.on('timeout', () => r2.destroy(new Error('Telegram API timeout'))); r2.on('error', reject); r2.write(body); r2.end();
+  });
 }
 function adminAuditLog(actor, action, detail = '') {
   adminAudit.unshift({ at: Math.floor(Date.now() / 1000), actor, action, detail: String(detail).slice(0, 200) });
@@ -1534,6 +1569,33 @@ app.post('/api/admin', async (req, res, next) => {
       const text = String(req.body.text || '/start');
       const reply = text.startsWith('/ping') ? '🏓 Pong!' : text.startsWith('/help') ? '⚡ /start /help /ping /echo /id /about' : text.startsWith('/echo') ? (text.slice(5).trim() || 'Usage: /echo hi') : text.startsWith('/') ? '⚡ PyTeleHost Ultra bot — try /help' : `🔁 ${text}`;
       return res.json({ ok: true, update_type: 'message', reply: [{ method: 'sendMessage', payload: { chat_id: 1, text: reply } }] });
+    }
+    if (['host_bot', 'bot_status', 'bot_start', 'bot_stop', 'bot_restart'].includes(action)) {
+      const token = String(req.body.token || '').trim();
+      if (!/^\d{5,16}:[A-Za-z0-9_-]{30,}$/.test(token)) return res.status(400).json({ ok: false, error: 'Valid bot token required' });
+      const preset = ['standard', 'echo', 'menu', 'assistant'].includes(req.body.preset) ? req.body.preset : 'standard';
+      const welcome = String(req.body.welcome || '').slice(0, 300);
+      const hookUrl = `${req.protocol}://${req.get('host')}/api/webhook?token=${encodeURIComponent(token)}&preset=${preset}${welcome ? `&welcome=${encodeURIComponent(welcome)}` : ''}`;
+      const setHook = () => tgApi(token, 'setWebhook', { url: hookUrl, drop_pending_updates: true, allowed_updates: ['message', 'edited_message', 'callback_query', 'inline_query'], max_connections: 40 });
+      global.__adminBots = global.__adminBots || new Map();
+      if (action === 'bot_status') {
+        const me = await tgApi(token, 'getMe'); const info = await tgApi(token, 'getWebhookInfo'); const w = info.result || {};
+        return res.json({ ok: !!me.ok, bot: me.result, webhook: { url: w.url, pending: w.pending_update_count, last_error: w.last_error_message }, live: !!w.url });
+      }
+      if (action === 'bot_stop') { const r = await tgApi(token, 'deleteWebhook', { drop_pending_updates: true }); adminAuditLog(s.u, 'bot_stop'); return res.json({ ok: !!r.ok, telegram: r }); }
+      if (action === 'bot_start' || action === 'bot_restart') {
+        if (action === 'bot_restart') { await tgApi(token, 'deleteWebhook', { drop_pending_updates: false }).catch(() => {}); await new Promise((r) => setTimeout(r, 400)); }
+        const r = await setHook(); adminAuditLog(s.u, action, preset);
+        return res.json({ ok: !!r.ok, webhook_url: hookUrl, preset, telegram: r });
+      }
+      const me = await tgApi(token, 'getMe');
+      if (!me.ok) return res.status(400).json({ ok: false, error: me.description || 'Telegram rejected the token' });
+      const start = req.body.start !== false;
+      let hookRes = null, live = false;
+      if (start) { hookRes = await setHook(); live = !!hookRes.ok; }
+      const bot = { id: crypto.createHash('sha256').update(token).digest('hex').slice(0, 10), name: String(req.body.name || me.result.first_name || 'Hosted Bot').slice(0, 60), framework: `PyTeleHost Brain · ${preset}`, mode: 'webhook', hosted: true, preset, status: live ? 'live' : 'registered', username: me.result.username, telegram_url: me.result.username ? `https://t.me/${me.result.username}` : null, webhook_url: start ? hookUrl : null, managed_by: s.u, created_at: Math.floor(Date.now() / 1000) };
+      global.__adminBots.set(bot.id, bot); adminAuditLog(s.u, 'host_bot', `${bot.name} [${preset}] live=${live}`);
+      return res.json({ ok: true, bot, live, webhook_url: bot.webhook_url, telegram: hookRes });
     }
     global.__adminBots = global.__adminBots || new Map();
     if (action === 'add_bot') {

@@ -182,10 +182,13 @@ class handler(BaseHTTPRequestHandler):
             try:
                 import webhook as wh
                 text = str(data.get("text") or "/start")[:500]
+                preset = str(data.get("preset") or "standard").lower()
                 update = {"message": {"from": {"id": 1, "first_name": "Console"},
                                       "chat": {"id": 1}, "text": text}}
-                actions, kind = wh.build_reply(update)
-                return send(self, {"ok": True, "update_type": kind, "reply": actions})
+                actions, kind = wh.build_reply(update, preset,
+                                               str(data.get("welcome") or "")[:300])
+                return send(self, {"ok": True, "preset": preset,
+                                   "update_type": kind, "reply": actions})
             except Exception as e:
                 return send(self, {"ok": False, "error": f"Brain test failed: {e}"}, 500)
 
@@ -216,6 +219,77 @@ class handler(BaseHTTPRequestHandler):
             audit(actor, "remove_bot", data.get("id"))
             return send(self, {"ok": True})
 
+        # ---- Admin Bot Hosting Studio ----
+        if action in ("host_bot", "bot_status", "bot_start", "bot_stop", "bot_restart"):
+            token = str(data.get("token") or "").strip()
+            if not valid_token(token):
+                return send(self, {"ok": False, "error": "Valid bot token required"}, 400)
+            host, proto = host_of(self)
+            preset = str(data.get("preset") or "standard").lower()
+            if preset not in ("standard", "echo", "menu", "assistant"):
+                preset = "standard"
+            welcome = str(data.get("welcome") or "")[:300]
+
+            def hook_url():
+                u = f"{proto}://{host}/api/webhook?token={quote(token, safe='')}&preset={preset}"
+                if welcome:
+                    u += f"&welcome={quote(welcome, safe='')}"
+                return u
+
+            def do_set():
+                return telegram(token, "setWebhook", {
+                    "url": hook_url(), "drop_pending_updates": True,
+                    "allowed_updates": ["message", "edited_message", "callback_query", "inline_query"],
+                    "max_connections": 40})
+
+            if action == "bot_status":
+                ok1, me = telegram(token, "getMe")
+                ok2, info = telegram(token, "getWebhookInfo")
+                w = (info or {}).get("result") or {}
+                audit(actor, "bot_status")
+                return send(self, {"ok": ok1, "bot": (me or {}).get("result"),
+                                   "webhook": {"url": w.get("url"), "pending": w.get("pending_update_count"),
+                                               "last_error": w.get("last_error_message"),
+                                               "max_connections": w.get("max_connections")},
+                                   "live": bool(w.get("url"))})
+            if action == "bot_stop":
+                ok, res = telegram(token, "deleteWebhook", {"drop_pending_updates": True})
+                audit(actor, "bot_stop")
+                return send(self, {"ok": ok and res.get("ok", False), "telegram": res}, 200 if ok else 502)
+            if action in ("bot_start", "bot_restart"):
+                if action == "bot_restart":
+                    telegram(token, "deleteWebhook", {"drop_pending_updates": False})
+                    time.sleep(0.4)
+                ok, res = do_set()
+                audit(actor, action, preset)
+                return send(self, {"ok": ok and res.get("ok", False), "webhook_url": hook_url(),
+                                   "preset": preset, "telegram": res}, 200 if ok else 502)
+            # host_bot: validate identity, optionally go live, register
+            ok, me_res = telegram(token, "getMe")
+            if not ok or not me_res.get("ok"):
+                return send(self, {"ok": False, "error": (me_res or {}).get(
+                    "description", "Telegram rejected the token")}, 400)
+            me = me_res["result"]
+            start = data.get("start", True) is not False
+            hook_res, live = None, False
+            if start:
+                ok2, hook_res = do_set()
+                live = ok2 and hook_res.get("ok", False)
+            bot_id = hashlib.sha256(token.encode()).hexdigest()[:10]
+            bot = {"id": bot_id,
+                   "name": str(data.get("name") or me.get("first_name") or "Hosted Bot")[:60],
+                   "framework": f"PyTeleHost Brain · {preset}",
+                   "mode": "webhook", "hosted": True, "preset": preset,
+                   "status": "live" if live else "registered",
+                   "username": me.get("username"),
+                   "telegram_url": f"https://t.me/{me['username']}" if me.get("username") else None,
+                   "webhook_url": hook_url() if start else None,
+                   "managed_by": actor, "created_at": int(time.time())}
+            ADMIN_BOTS[bot_id] = bot
+            audit(actor, "host_bot", f"{bot['name']} @{me.get('username') or '-'} [{preset}] live={live}")
+            return send(self, {"ok": True, "bot": bot, "live": live,
+                               "webhook_url": bot["webhook_url"], "telegram": hook_res})
+
         # ---- Telegram operations (require a bot token) ----
         if action in ("validate", "webhook_info", "webhook_set", "webhook_delete", "send_message"):
             token = str(data.get("token") or "").strip()
@@ -244,8 +318,12 @@ class handler(BaseHTTPRequestHandler):
                 audit(actor, "send_message", f"chat {chat_id}")
                 return send(self, {"ok": ok and res.get("ok", False), "telegram": res}, 200 if ok else 502)
             host, proto = host_of(self)
-            url = str(data.get("webhook_url") or "").strip() or \
+            _preset = str(data.get("preset") or "standard").lower()
+            _welcome = str(data.get("welcome") or "")[:300]
+            url = str(data.get("webhook_url") or "").strip() or (
                 f"{proto}://{host}/api/webhook?token={quote(token, safe='')}"
+                f"&preset={_preset if _preset in ('standard','echo','menu','assistant') else 'standard'}"
+                + (f"&welcome={quote(_welcome, safe='')}" if _welcome else ""))
             ok, res = telegram(token, "setWebhook", {
                 "url": url, "drop_pending_updates": True,
                 "allowed_updates": ["message", "edited_message", "callback_query", "inline_query"],

@@ -109,6 +109,11 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
 .swatch{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer}
 .preview{background:#070d20;border:1px solid var(--line);border-radius:14px;padding:24px;text-align:center}.preview h3{color:#fff;font-size:23px;margin:12px 0 8px}.preview p{color:var(--mut);font-size:14px;line-height:1.6;max-width:560px;margin:0 auto 12px}
 .pal-item{display:block;width:100%;text-align:left;background:#0b1226;border:1px solid var(--line);color:var(--txt);padding:12px 14px;border-radius:11px;margin-bottom:8px;cursor:pointer;font-size:14px;font-family:inherit}.pal-item:hover{border-color:var(--blue);background:#10254a}
+.preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.preset{text-align:left;background:#070d20;border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;color:var(--txt);font-family:inherit}
+.preset b{display:block;color:#fff;font-size:14px;margin-bottom:3px}.preset small{color:var(--mut);font-size:12px;line-height:1.45;display:block}
+.preset.on{border-color:var(--blue);background:#10254a;box-shadow:0 0 0 1px var(--blue)}
+.hact{display:flex;gap:6px;flex-wrap:wrap}.hstat{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:700;background:#3a2a0d;color:#ffc857}.hstat.live{background:#0d3a22;color:var(--grn)}.hstat.off{background:#3a0d18;color:var(--red)}
 </style>
 </head>
 <body>
@@ -294,6 +299,7 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
       <div class="xp-user"><span class="dot"></span><span id="xWho">operator</span><small id="xExpiry"></small></div>
       <button class="xp-nav on" data-xtab="overview">📊 Overview</button>
       <button class="xp-nav" data-xtab="bots">🤖 Bot Manager</button>
+      <button class="xp-nav" data-xtab="hosting">🚀 Bot Hosting</button>
       <button class="xp-nav" data-xtab="telegram">✈️ Telegram Lab</button>
       <button class="xp-nav" data-xtab="analytics">📈 Analytics</button>
       <button class="xp-nav" data-xtab="site">🎛️ Site Builder</button>
@@ -347,6 +353,43 @@ pre.json{background:#030711;border:1px solid var(--line);border-radius:12px;padd
           <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th>Status</th><th></th></tr></thead><tbody id="xServerBots"></tbody></table></div></div>
         <div class="card mt"><b style="color:#fff">💻 This Browser's Bots</b> <button class="btn small danger" id="xBulkLocal" style="float:right">Delete All</button>
           <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Framework</th><th>Mode</th><th></th></tr></thead><tbody id="xLocalBots"></tbody></table></div></div>
+      </div>
+
+      <div data-xpane="hosting" class="hide">
+        <div class="xp-grid" id="xhStats"></div>
+        <div class="xp-2col">
+          <div class="card"><b style="color:#fff">🚀 Host a New Bot</b>
+            <p style="color:var(--mut);font-size:13px;line-height:1.65;margin-top:6px">Your bot goes live on the Python serverless brain — no server, answers 24/7. Pick a personality, paste a token, deploy.</p>
+            <label>Bot name</label><input id="xhName" placeholder="My Hosted Bot">
+            <label>Bot token — from @BotFather</label><input id="xhToken" type="password" placeholder="123456789:AA…" autocomplete="off">
+            <div class="flex mt"><button class="btn small ghost" id="xhValidate">🔍 Validate Token</button><span id="xhValOut" style="font-size:13px"></span></div>
+            <label>🤖 Bot personality</label>
+            <div class="preset-grid" id="xhPresets">
+              <button type="button" class="preset on" data-preset="standard"><b>⚡ Standard</b><small>Commands + smart echo, inline buttons</small></button>
+              <button type="button" class="preset" data-preset="assistant"><b>🤖 Assistant</b><small>Keyword-smart: pricing, support, hours…</small></button>
+              <button type="button" class="preset" data-preset="menu"><b>🏢 Business Menu</b><small>About / Services / Contact buttons</small></button>
+              <button type="button" class="preset" data-preset="echo"><b>🔁 Echo</b><small>Repeats everything back</small></button>
+            </div>
+            <label>Custom /start welcome (optional)</label><input id="xhWelcome" placeholder="👋 Welcome to my bot!">
+            <label class="chk"><input type="checkbox" id="xhStart" checked> Start bot immediately (set webhook & go live)</label>
+            <label class="chk"><input type="checkbox" id="xhSave" checked> Save bot in this console (token stays in your browser only)</label>
+            <button class="btn mt" id="xhDeploy" style="width:100%;justify-content:center">🚀 Deploy & Host Bot</button>
+          </div>
+          <div class="card"><b style="color:#fff">📟 Hosting Pipeline</b>
+            <div class="steps mt">
+              <div class="step" data-hstep="1">1️⃣ Validate token with Telegram</div>
+              <div class="step" data-hstep="2">2️⃣ Register hosted bot</div>
+              <div class="step" data-hstep="3">3️⃣ Set webhook → Python brain</div>
+              <div class="step" data-hstep="4">4️⃣ Verify live status</div>
+            </div>
+            <label>Deploy log</label>
+            <div id="xhLog" style="background:#030711;border:1px solid var(--line);border-radius:12px;padding:13px;font-family:ui-monospace,monospace;font-size:12.3px;line-height:1.65;height:190px;overflow:auto;white-space:pre-wrap"><span style="color:#5f7195">Hosting studio ready…</span></div>
+            <div class="flex mt"><button class="btn small ghost" id="xhRefreshAll">↻ Refresh All Statuses</button><button class="btn small ghost" id="xhClearLog">🧹 Clear Log</button></div>
+          </div>
+        </div>
+        <div class="card mt"><b style="color:#fff">☁️ My Hosted Bots</b><span style="color:var(--mut);font-size:12.5px"> — live status is verified against Telegram</span>
+          <div style="overflow-x:auto"><table class="bots-t"><thead><tr><th>Bot</th><th>Personality</th><th>Status</th><th>Webhook</th><th>Actions</th></tr></thead><tbody id="xhBots"></tbody></table></div>
+        </div>
       </div>
 
       <div data-xpane="telegram" class="hide">
@@ -723,7 +766,7 @@ $('#xmSend').onclick=()=>{if(!$('#xmText').value.trim()){$('#xwOut').textContent
 $('#xtCmd').onchange=()=>$('#xtCustom').classList.toggle('hide',$('#xtCmd').value!=='custom');
 $('#xtRun').onclick=async()=>{
   const text=$('#xtCmd').value==='custom'?$('#xtCustom').value:$('#xtCmd').value, out=$('#xwOut'); out.textContent='⏳ Asking the brain…';
-  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'test_brain',text})}); out.textContent='🧠 Input: '+text+'\n\n'+JSON.stringify(d.reply,null,2)}
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'test_brain',text,preset:typeof xhPreset!=='undefined'?xhPreset:'standard'})}); out.textContent='🧠 Preset: '+(d.preset||'standard')+' · Input: '+text+'\n\n'+JSON.stringify(d.reply,null,2)}
   catch(e){out.textContent='❌ '+e.message}
 };
 
@@ -767,9 +810,85 @@ $('#xsClearLocal').onclick=async()=>{if(!confirm('Remove console-managed AND bro
 $('#xsClearAudit').onclick=async()=>{try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'clear_audit'})});refreshAll(true);$('#xsOut').textContent='Audit cleared.'}catch(e){$('#xsOut').textContent='❌ '+e.message}};
 $('#xsWipe').onclick=async()=>{if(!confirm('WIPE all console state on this instance?'))return; try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'clear_state'})});$('#xsOut').textContent='State wiped.';refreshAll(true)}catch(e){$('#xsOut').textContent='❌ '+e.message}};
 
+/* ================= admin bot hosting studio ================= */
+const HKEY='x_hosted_bots_v1';
+let hostedBots=[]; try{hostedBots=JSON.parse(localStorage.getItem(HKEY)||'[]')}catch(e){}
+let xhPreset='standard';
+function saveHosted(){localStorage.setItem(HKEY,JSON.stringify(hostedBots))}
+function hlog(m,cls){const el=$('#xhLog');if(!el)return;const d=document.createElement('div');if(cls)d.style.color=cls;d.textContent=m;el.appendChild(d);el.scrollTop=el.scrollHeight}
+function hstep(n){$$('[data-hstep]').forEach(s=>{const i=+s.dataset.hstep;if(i<n)s.className='step done';else if(i===n)s.className='step on'})}
+$$('#xhPresets .preset').forEach(b=>b.onclick=()=>{xhPreset=b.dataset.preset;$$('#xhPresets .preset').forEach(x=>x.classList.toggle('on',x===b));hlog('🤖 Personality: '+xhPreset,'#8fa3c8')});
+$('#xhValidate').onclick=async()=>{
+  const token=$('#xhToken').value.trim(),out=$('#xhValOut'); if(!token){out.textContent='Paste a token first';return}
+  out.textContent='⏳ Checking…';
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'validate',token})});const me=d.telegram.result;out.innerHTML='<span style="color:var(--grn)">✅ @'+esc(me.username)+'</span>';if(!$('#xhName').value)$('#xhName').value=me.first_name||'';hlog('✅ Token valid → @'+me.username,'#2fd67a')}
+  catch(e){out.innerHTML='<span style="color:var(--red)">❌ '+esc(e.message)+'</span>';hlog('❌ '+e.message,'#ff5d73')}
+};
+function renderHosted(){
+  const tb=$('#xhBots'); if(!tb)return;
+  const live=hostedBots.filter(b=>b.live).length;
+  $('#xhStats').innerHTML=[['☁️ Hosted Bots',hostedBots.length],['🟢 Live Now',live],['🔴 Stopped',hostedBots.length-live],['🤖 Personalities',new Set(hostedBots.map(b=>b.preset)).size]].map(x=>'<div class="stat"><b>'+x[1]+'</b><s>'+x[0]+'</s></div>').join('');
+  tb.innerHTML=hostedBots.length?hostedBots.map((b,i)=>'<tr><td><b style="color:#fff">'+esc(b.name)+'</b>'+(b.username?'<br><a href="https://t.me/'+esc(b.username)+'" target="_blank">@'+esc(b.username)+'</a>':'')+'<br><small style="color:var(--mut)">'+new Date((b.created_at||0)*1000).toLocaleDateString()+'</small></td><td><span class="tag">'+esc(b.preset||'standard')+'</span></td><td><span class="hstat '+(b.live?'live':'off')+'" id="xhSt'+i+'">'+(b.live?'● LIVE':'○ STOPPED')+'</span></td><td style="max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+esc(b.webhook_url||'')+'">'+esc(b.webhook_url||'—')+'</td><td><div class="hact">'
+    +'<button class="btn small ghost" onclick="xhStatus('+i+')">Status</button>'
+    +(b.live?'<button class="btn small ghost" onclick="xhCtl('+i+',\'bot_stop\')">Stop</button>':'<button class="btn small" onclick="xhCtl('+i+',\'bot_start\')">Start</button>')
+    +'<button class="btn small ghost" onclick="xhCtl('+i+',\'bot_restart\')">Restart</button>'
+    +'<button class="btn small ghost" onclick="xhCopy('+i+')">Copy URL</button>'
+    +'<button class="btn small danger" onclick="xhDel('+i+')">Delete</button></div></td></tr>').join('')
+  :'<tr><td colspan="5" style="color:var(--mut)">No hosted bots yet — deploy your first one above 🚀</td></tr>';
+}
+renderHosted();
+$('#xhDeploy').onclick=async()=>{
+  const token=$('#xhToken').value.trim(),name=$('#xhName').value.trim(),start=$('#xhStart').checked,welcome=$('#xhWelcome').value.trim();
+  if(!token){toast('⚠ Paste your bot token first');$('#xhToken').focus();return}
+  const btn=$('#xhDeploy'); btn.disabled=true; btn.textContent='⏳ Hosting…';
+  $$('[data-hstep]').forEach(s=>s.className='step');
+  hlog('🚀 Hosting "'+(name||'bot')+'" · preset='+xhPreset,'#2aabee'); hstep(1);
+  try{
+    const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'host_bot',name,token,preset:xhPreset,welcome,start})});
+    hstep(2); hlog('✅ Registered: '+(d.bot.username?'@'+d.bot.username:d.bot.name)+' · id '+d.bot.id,'#2fd67a'); hstep(3);
+    if(start&&d.live)hlog('✅ Webhook live → Python brain ('+xhPreset+')','#2fd67a'); else if(start)hlog('⚠ Registered but webhook not confirmed — use Start.','#ffc857'); else hlog('ℹ Registered only (not started).','#8fa3c8');
+    if($('#xhSave').checked){
+      const rec={...d.bot,token,welcome,live:!!d.live};
+      hostedBots=hostedBots.filter(b=>b.username!==rec.username||!rec.username); hostedBots.unshift(rec); saveHosted();
+    }
+    renderHosted(); hstep(4);
+    try{const s=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'bot_status',token})});hlog(s.live?'🟢 Verified LIVE on Telegram (pending: '+(s.webhook.pending??0)+')':'🔴 Telegram reports no webhook',s.live?'#2fd67a':'#ff5d73'); $$('[data-hstep]').forEach(x=>x.className='step done')}catch(e){hlog('⚠ Verify: '+e.message,'#ffc857')}
+    toast('🎉 '+(d.bot.username?'@'+d.bot.username:'Bot')+' hosted & live!'); $('#xhToken').value='';
+    refreshAll(true);
+  }catch(e){hlog('❌ Hosting failed: '+e.message,'#ff5d73');toast('❌ '+e.message)}
+  btn.disabled=false; btn.textContent='🚀 Deploy & Host Bot';
+};
+window.xhStatus=async i=>{
+  const b=hostedBots[i]; if(!b||!b.token)return; const el=$('#xhSt'+i); if(el)el.textContent='⏳ checking';
+  try{const s=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'bot_status',token:b.token})});
+    b.live=!!s.live; if(s.bot&&s.bot.username)b.username=s.bot.username; saveHosted(); renderHosted();
+    hlog((s.live?'🟢 ':'🔴 ')+(b.username?'@'+b.username:b.name)+' — pending '+(s.webhook.pending??0)+(s.webhook.last_error?' · last error: '+s.webhook.last_error:''),s.live?'#2fd67a':'#ff5d73');
+  }catch(e){hlog('❌ Status: '+e.message,'#ff5d73');renderHosted()}
+};
+window.xhCtl=async(i,action)=>{
+  const b=hostedBots[i]; if(!b||!b.token)return;
+  if(action==='bot_stop'&&!confirm('Stop '+(b.username?'@'+b.username:b.name)+'? It will stop responding.'))return;
+  hlog('⏳ '+action+' → '+(b.username?'@'+b.username:b.name),'#8fa3c8');
+  try{const d=await xApi('/api/admin',{method:'POST',body:JSON.stringify({action,token:b.token,preset:b.preset||'standard',welcome:b.welcome||''})});
+    if(d.webhook_url){b.webhook_url=d.webhook_url}
+    b.live=action!=='bot_stop'; saveHosted(); renderHosted();
+    hlog('✅ '+(b.username?'@'+b.username:b.name)+' '+(b.live?'is LIVE':'stopped'),'#2fd67a');
+  }catch(e){hlog('❌ '+e.message,'#ff5d73')}
+};
+window.xhCopy=i=>{const b=hostedBots[i];if(b&&b.webhook_url){navigator.clipboard.writeText(b.webhook_url);toast('📋 Webhook URL copied')}};
+window.xhDel=async i=>{
+  const b=hostedBots[i]; if(!b)return;
+  if(!confirm('Delete '+(b.username?'@'+b.username:b.name)+' from hosted bots? (webhook will be stopped)'))return;
+  if(b.token){try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'bot_stop',token:b.token})})}catch(e){}
+    try{await xApi('/api/admin',{method:'POST',body:JSON.stringify({action:'remove_bot',id:b.id})})}catch(e){}}
+  hostedBots.splice(i,1);saveHosted();renderHosted();hlog('🗑 Hosted bot deleted','#8fa3c8');refreshAll(true);
+};
+$('#xhRefreshAll').onclick=async()=>{for(let i=0;i<hostedBots.length;i++)await window.xhStatus(i);toast('↻ All statuses refreshed')};
+$('#xhClearLog').onclick=()=>{$('#xhLog').innerHTML='';$$('[data-hstep]').forEach(s=>s.className='step')};
+
 /* command palette */
 const PALETTE=[
- ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['✈️ Telegram Lab',()=>gotoTab('telegram')],
+ ['📊 Overview',()=>gotoTab('overview')],['🤖 Bot Manager',()=>gotoTab('bots')],['🚀 Bot Hosting',()=>gotoTab('hosting')],['🟢 Refresh Hosted Statuses',()=>$('#xhRefreshAll').click()],['✈️ Telegram Lab',()=>gotoTab('telegram')],
  ['📈 Analytics',()=>gotoTab('analytics')],['🎛️ Site Builder',()=>gotoTab('site')],['⚙️ System',()=>gotoTab('system')],
  ['🩺 Run Health Check',()=>runHealth('#xHealthOut')],['↻ Refresh Data',()=>refreshAll()],['⬇️ Export State',()=>$('#xsExport').click()],
  ['📊 Download Analytics CSV',()=>$('#xCsv').click()],['🔒 Logout',()=>xLogout(false)],
