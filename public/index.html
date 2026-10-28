@@ -356,6 +356,12 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
 @media(max-width:640px){.in-chip{display:none}.in-orb{width:110px;height:110px}.in-bolt{width:88px;height:88px;font-size:44px}}
 @media(prefers-reduced-motion:reduce){.mq-track,.in-aurora,.in-bolt,.in-ring,.in-chip,.in-title span,.in-tag{animation:none!important}body.played .hi{animation:none}}
 
+/* ===== Paste-Code Studio + Dependency Installer ===== */
+.lib-group{flex-basis:100%;font-size:10.5px;letter-spacing:1.4px;color:#5f7195;font-weight:800;text-transform:uppercase;margin:12px 0 2px}
+.lib{transition:all .15s ease}.lib:hover{border-color:var(--blue);color:#fff;transform:translateY(-1px)}
+.bundle-btn.on{border-color:var(--blue);color:#fff}
+#codeEd{min-height:300px}
+
 </style>
 </head>
 <body>
@@ -379,7 +385,7 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
 <nav><div class="wrap nav-in">
   <a class="logo" href="#" id="brandMark">⚡ PyTeleHost <span>ULTRA</span></a>
   <div class="nav-links">
-    <a href="#deploy">Deploy</a><a href="#bots">My Bots</a><a href="#templates">Templates</a>
+    <a href="#deploy">Deploy</a><a href="#bots">My Bots</a>
     <a href="#playground">Playground</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a>
   </div>
   <span class="pill" style="margin-left:auto" id="livePill"><span class="dot"></span><span id="liveTxt">checking…</span></span>
@@ -391,7 +397,7 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
   <p id="heroSub" class="hi" style="--n:3">Paste your bot token, press deploy — your Python bot goes live on global serverless webhooks. No VPS, no polling, no credit card. python-telegram-bot, aiogram, Telethon &amp; raw Bot API supported.</p>
   <div class="flex hi" style="justify-content:center;--n:4">
     <a class="btn" href="#deploy">🚀 Deploy My Bot</a>
-    <a class="btn ghost" href="#templates">📚 View Templates</a>
+    <a class="btn ghost" href="#playground">📋 Paste Your Code</a>
   </div>
   <div class="lang-strip hi" style="--n:5" aria-label="Supported languages">
     <span>🐍 <b>Python</b></span><span>🟢 <b>Node.js</b></span><span>☕ <b>Java</b></span><span>🔵 <b>Go</b></span><span>🦀 <b>Rust</b></span><span>🟣 <b>C#</b></span><span>🐘 <b>PHP</b></span><span>💎 <b>Ruby</b></span><span>🐚 <b>Bash</b></span><span style="border-color:var(--vio);color:#fff">🌍 Multi-language code hosting included</span>
@@ -467,27 +473,33 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
   </div>
 </section>
 
-<section id="templates" class="wrap">
-  <h2>📚 Production Templates</h2>
-  <p class="sub">Battle-tested Python starters. One click loads the code + requirements into the playground.</p>
-  <div class="tpl-grid" id="tplGrid"><p style="color:var(--mut)">Loading templates…</p></div>
-</section>
-
 <section id="playground" class="wrap">
-  <h2>🧪 Code Playground + Requirements Builder</h2>
-  <p class="sub">Edit your <span class="kbd">bot.py</span>, tick the libraries you need, and copy a ready project.</p>
+  <h2>🧪 Paste Code + Dependency Installer</h2>
+  <p class="sub">No templates — paste <b style="color:#fff">your own</b> <span class="kbd">bot.py</span> straight from the clipboard. Imports are auto-detected and turned into a ready <span class="kbd">requirements.txt</span> from 40+ installable Python libraries.</p>
   <div class="console">
     <div class="card">
-      <label>bot.py</label>
-      <textarea class="code" id="codeEd" spellcheck="false"></textarea>
+      <label>bot.py — your code</label>
+      <textarea class="code" id="codeEd" spellcheck="false" placeholder="# Paste your bot.py code here — Ctrl+V works too.&#10;# Dependencies in your imports are detected &amp; installed automatically."></textarea>
       <div class="flex mt">
-        <button class="btn small" id="btnCopyCode">📋 Copy Code</button>
+        <button class="btn small" id="btnPasteCode">📋 Paste Code from Clipboard</button>
+        <button class="btn small ghost" id="btnCopyCode">📋 Copy Code</button>
         <button class="btn small ghost" id="btnDownload">⬇️ Download bot.py</button>
+        <button class="btn small ghost" id="btnClearCode">🧹 Clear</button>
       </div>
+      <div id="codeStats" style="font-size:12.5px;color:var(--mut);margin-top:10px">📄 Empty — paste your bot code to begin</div>
     </div>
     <div class="card">
-      <label>Libraries (click to toggle)</label>
-      <div class="libs" id="libs"></div>
+      <label>Python libraries — click to install into requirements.txt</label>
+      <div id="libCount" style="font-size:12.5px;color:var(--mut)"></div>
+      <input id="libSearch" placeholder="🔎 Search libraries… (redis, openai, pandas, flask)" style="margin-top:8px">
+      <div class="flex mt">
+        <button type="button" class="btn small ghost bundle-btn" data-bundle="telegram">🤖 Telegram bundle</button>
+        <button type="button" class="btn small ghost bundle-btn" data-bundle="ai">🧠 AI bundle</button>
+        <button type="button" class="btn small ghost bundle-btn" data-bundle="db">🗄️ Database bundle</button>
+        <button type="button" class="btn small ghost bundle-btn" data-bundle="web">🌐 Web bundle</button>
+      </div>
+      <div class="libs" id="libs" style="margin-top:6px"></div>
+      <div class="flex mt"><input id="customLib" placeholder="➕ Any PyPI package — e.g. flask or flask==3.0.3" style="flex:1"><button class="btn small" id="btnAddLib">➕ Add Package</button></div>
       <label>requirements.txt</label>
       <textarea class="code" id="reqEd" style="min-height:130px" spellcheck="false">python-telegram-bot==21.6</textarea>
       <label>Start command</label>
@@ -515,7 +527,7 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
   <h2>💎 Simple Pricing</h2>
   <p class="sub">Start free. Scale when your bot blows up.</p>
   <div class="price-grid">
-    <div class="price"><h3 style="color:#fff">Hobby</h3><b>$0</b><ul><li>✅ 3 bots</li><li>✅ Serverless webhooks</li><li>✅ All templates</li><li>✅ Community support</li></ul><a class="btn ghost" href="#deploy">Start Free</a></div>
+    <div class="price"><h3 style="color:#fff">Hobby</h3><b>$0</b><ul><li>✅ 3 bots</li><li>✅ Serverless webhooks</li><li>✅ Paste-code playground</li><li>✅ Community support</li></ul><a class="btn ghost" href="#deploy">Start Free</a></div>
     <div class="price hot"><span class="tag live">MOST POPULAR</span><h3 style="color:#fff;margin-top:9px">Pro</h3><b>$5</b><span style="color:var(--mut)">/mo</span><ul><li>✅ 25 bots</li><li>✅ Custom domains</li><li>✅ Priority cold-starts</li><li>✅ Polling VPS included</li><li>✅ Priority support</li></ul><a class="btn" href="#deploy">Go Pro</a></div>
     <div class="price"><h3 style="color:#fff">Fleet</h3><b>$15</b><span style="color:var(--mut)">/mo</span><ul><li>✅ Unlimited bots</li><li>✅ Team access</li><li>✅ Dedicated regions</li><li>✅ 99.99% uptime SLA</li></ul><a class="btn ghost" href="#deploy">Contact Us</a></div>
   </div>
@@ -801,7 +813,6 @@ body.played .hi{animation:hiUp .85s cubic-bezier(.2,.8,.25,1) both;animation-del
             <div class="xrow"><span>🛠 Maintenance mode</span><label class="tgl"><input type="checkbox" id="xfMaintenance"><i></i></label></div>
             <div class="xrow"><span>📝 Deployments open</span><label class="tgl"><input type="checkbox" id="xfReg"><i></i></label></div>
             <div class="xrow"><span>🚀 Deploy engine enabled</span><label class="tgl"><input type="checkbox" id="xfDeploy"><i></i></label></div>
-            <div class="xrow"><span>📚 Templates section</span><label class="tgl"><input type="checkbox" id="xfTpl"><i></i></label></div>
             <div class="xrow"><span>💎 Pricing section</span><label class="tgl"><input type="checkbox" id="xfPricing"><i></i></label></div>
             <div class="xrow"><span>❓ FAQ section</span><label class="tgl"><input type="checkbox" id="xfFaq"><i></i></label></div>
             <div class="xrow"><span>🧪 Playground section</span><label class="tgl"><input type="checkbox" id="xfPlay"><i></i></label></div>
@@ -980,27 +991,53 @@ $('#btnTestHook').onclick=async()=>{
 };
 $('#btnClearLog').onclick=()=>{$('#log').innerHTML='';resetSteps()};
 
-/* templates */
-const FALLBACK_TPL=[{id:'webhook-raw',name:'Serverless Webhook Bot',framework:'Raw Bot API',icon:'⚡',desc:'Zero-dependency bot hosted at /api/webhook. Commands: /start /help /ping /echo /id.',requirements:'# none - stdlib only',code:'# Hosted automatically by PyTeleHost Ultra at /api/webhook\n# Paste token in Deploy Console -> Deploy + Set Webhook\nprint("live")'}];
-async function loadTemplates(){
-  let tpls=FALLBACK_TPL;
-  try{const d=await api('/api/templates'); if(d.templates?.length)tpls=d.templates}catch(e){}
-  $('#tplGrid').innerHTML=tpls.map((t,i)=>'<div class="tpl"><div class="ico">'+(t.icon||'🐍')+'</div><h3>'+esc(t.name)+'</h3><p>'+esc(t.desc||'')+'</p><div class="flex mt"><span class="tag">'+esc(t.framework)+'</span><span class="tag warn">'+esc(t.level||'All levels')+'</span></div><button class="btn small mt" onclick="useTpl('+i+')">Use Template →</button></div>').join('');
-  window._tpls=tpls;
-}
-window.useTpl=i=>{const t=window._tpls[i];$('#codeEd').value=t.code||'';$('#reqEd').value=t.requirements||'';$('#fFramework').value=[...$('#fFramework').options].some(o=>o.value===t.framework)?t.framework:$('#fFramework').value;document.getElementById('playground').scrollIntoView({behavior:'smooth'});toast('📚 Loaded: '+t.name)};
-loadTemplates();
-$('#codeEd').value=FALLBACK_TPL[0].code;
-
-/* requirements builder */
-const LIBS=['python-telegram-bot==21.6','aiogram==3.13.1','Telethon==1.36.0','pyrogram==2.0.106','httpx==0.27.2','requests==2.32.3','python-dotenv==1.0.1','openai==1.51.0','google-generativeai==0.8.3','SQLAlchemy==2.0.35','redis==5.0.8','aiohttp==3.10.5','Pillow==10.4.0','beautifulsoup4==4.12.3','pandas==2.2.2'];
+/* ============ paste-code studio + dependency installer (templates removed) ============ */
+const LIB_GROUPS={
+'🤖 Telegram Bots':['python-telegram-bot==21.6','aiogram==3.13.1','Telethon==1.36.0','pyrogram==2.0.106','PyTelegramBotAPI==4.23.0'],
+'🌐 Web & HTTP':['httpx==0.28.1','requests==2.32.3','aiohttp==3.11.11','fastapi==0.115.6','uvicorn==0.34.0','Flask==3.1.0','websockets==14.1','pydantic==2.10.4'],
+'🧠 AI & LLM':['openai==1.59.3','google-generativeai==0.8.3','anthropic==0.40.0','groq==0.13.1','langchain==0.3.13','tiktoken==0.8.0'],
+'🗄️ Databases':['SQLAlchemy==2.0.36','redis==5.2.1','pymongo==4.10.1','motor==3.6.0','asyncpg==0.30.0','psycopg2-binary==2.9.10','aiosqlite==0.20.0'],
+'🎨 Media & Files':['Pillow==11.0.0','opencv-python==4.10.0.84','qrcode==8.0','moviepy==2.1.1','yt-dlp==2024.12.23','pydub==0.25.1'],
+'🧰 Data & Utilities':['pandas==2.2.3','numpy==2.2.0','openpyxl==3.1.5','beautifulsoup4==4.12.3','lxml==5.3.0','python-dotenv==1.0.1','APScheduler==3.10.4','schedule==1.2.2','celery==5.4.0','cryptography==44.0.0','PyJWT==2.10.1','PyYAML==6.0.2','python-dateutil==2.9.0.post0']};
+const LIBS=Object.values(LIB_GROUPS).flat();
+const LIB_BY_NAME={}; LIBS.forEach(l=>LIB_BY_NAME[l.split('==')[0].toLowerCase()]=l);
+const IMPORT_MAP={telegram:'python-telegram-bot',telebot:'PyTelegramBotAPI',PIL:'Pillow',bs4:'beautifulsoup4',dotenv:'python-dotenv',cv2:'opencv-python',yaml:'PyYAML',jwt:'PyJWT',dateutil:'python-dateutil',google:'google-generativeai',flask:'Flask',sqlalchemy:'SQLAlchemy'};
+const STDLIB=new Set('os sys re json time math random logging asyncio io typing collections datetime pathlib urllib enum dataclasses functools itertools contextlib subprocess threading multiprocessing socket ssl hashlib hmac secrets string textwrap sqlite3 csv html xml base64 uuid queue signal traceback inspect argparse configparser'.split(' '));
 const selLibs=new Set(['python-telegram-bot==21.6']);
-function renderLibs(){$('#libs').innerHTML=LIBS.map(l=>'<button type="button" class="lib'+(selLibs.has(l)?' sel':'')+'" data-lib="'+l+'">'+l.split('==')[0]+'</button>').join('');
-  $$('#libs .lib').forEach(b=>b.onclick=()=>{selLibs.has(b.dataset.lib)?selLibs.delete(b.dataset.lib):selLibs.add(b.dataset.lib);$('#reqEd').value=[...selLibs].join('\n');renderLibs()});}
-renderLibs();
+function syncReq(){$('#reqEd').value=[...selLibs].join('\n'); const c=$('#libCount'); if(c)c.textContent=LIBS.length+' libraries available · '+selLibs.size+' selected · click chips to install / remove'}
+function renderLibs(){ const el=$('#libSearch'), q=el?el.value.trim().toLowerCase():'';
+  $('#libs').innerHTML=Object.entries(LIB_GROUPS).map(([g,arr])=>{ const items=arr.filter(l=>!q||l.toLowerCase().includes(q)); if(!items.length)return '';
+   return '<div class="lib-group">'+g+'</div>'+items.map(l=>'<button type="button" class="lib'+(selLibs.has(l)?' sel':'')+'" data-lib="'+l+'">'+l.split('==')[0]+'</button>').join('')}).join('')||'<p style="color:var(--mut);font-size:13px">No match — add it as a custom package below 👇</p>';
+  $$('#libs .lib').forEach(b=>b.onclick=()=>{selLibs.has(b.dataset.lib)?selLibs.delete(b.dataset.lib):selLibs.add(b.dataset.lib);syncReq();renderLibs()});}
+function detectLibs(code){ const found=[]; const re=/(?:^|\n)\s*(?:import|from)\s+([A-Za-z_][A-Za-z0-9_]*)/g; let m;
+  while((m=re.exec(code||''))){ const mod=m[1]; if(STDLIB.has(mod))continue; const name=IMPORT_MAP[mod]||mod; const spec=LIB_BY_NAME[String(name).toLowerCase()]; if(spec&&!found.includes(spec))found.push(spec);} return found}
+function autoInstall(code){ const added=[]; detectLibs(code).forEach(sp=>{if(!selLibs.has(sp)){selLibs.add(sp);added.push(sp)}});
+  if(added.length){syncReq();renderLibs()} return added}
+function updateCodeStats(){ const v=$('#codeEd').value, el=$('#codeStats'); if(!el)return; if(!v){el.textContent='📄 Empty — paste your bot code to begin';return}
+  const d=detectLibs(v); el.textContent='📄 '+v.split('\n').length+' lines · '+v.length+' chars · imports detected: '+(d.length?d.map(f=>f.split('==')[0]).join(', '):'none yet')}
+async function pasteFromClipboard(){ const ed=$('#codeEd');
+  try{ if(!navigator.clipboard||!navigator.clipboard.readText)throw new Error('Clipboard API unavailable');
+    const text=await navigator.clipboard.readText();
+    if(!text||!text.trim()){toast('📋 Clipboard is empty — copy your bot code first');ed.focus();return}
+    ed.value=text; updateCodeStats(); const added=autoInstall(text);
+    toast('📋 Pasted '+text.split('\n').length+' lines'+(added.length?' · 📦 auto-installed: '+added.map(f=>f.split('==')[0]).join(', '):''));
+  }catch(e){ ed.focus(); toast('⚠ Browser blocked clipboard read — press Ctrl+V (auto-install still works)'); } }
+$('#btnPasteCode').onclick=pasteFromClipboard;
+$('#codeEd').addEventListener('input',updateCodeStats);
+$('#codeEd').addEventListener('paste',()=>setTimeout(()=>{const added=autoInstall($('#codeEd').value); updateCodeStats(); if(added.length)toast('📦 Auto-installed: '+added.map(f=>f.split('==')[0]).join(', '))},60));
+$('#btnClearCode').onclick=()=>{if(!$('#codeEd').value||confirm('Clear the editor?')){$('#codeEd').value='';updateCodeStats();$('#codeEd').focus()}};
+$('#libSearch').addEventListener('input',renderLibs);
+const BUNDLES={telegram:['python-telegram-bot==21.6','httpx==0.28.1','python-dotenv==1.0.1'],ai:['openai==1.59.3','google-generativeai==0.8.3','anthropic==0.40.0','python-dotenv==1.0.1'],db:['SQLAlchemy==2.0.36','redis==5.2.1','pymongo==4.10.1','aiosqlite==0.20.0'],web:['fastapi==0.115.6','uvicorn==0.34.0','requests==2.32.3','beautifulsoup4==4.12.3']};
+$$('.bundle-btn').forEach(b=>b.onclick=()=>{let n=0;(BUNDLES[b.dataset.bundle]||[]).forEach(sp=>{if(!selLibs.has(sp)){selLibs.add(sp);n++}});syncReq();renderLibs();toast('📦 Bundle installed ('+n+' new)')});
+$('#btnAddLib').onclick=()=>{ const inp=$('#customLib'), v=inp.value.trim(); if(!v)return;
+  if(!/^[A-Za-z0-9._-]+(==[A-Za-z0-9.*+!-]+)?$/.test(v)){toast('⚠ Enter a package like flask or flask==3.0.3');return}
+  const existing=LIBS.find(l=>l.split('==')[0].toLowerCase()===v.split('==')[0].toLowerCase());
+  const spec=existing||v; if(!existing){LIBS.push(v); LIB_BY_NAME[v.split('==')[0].toLowerCase()]=v}
+  selLibs.add(spec); syncReq(); renderLibs(); inp.value=''; toast('📦 Added '+spec)};
 $('#btnCopyCode').onclick=()=>{navigator.clipboard.writeText($('#codeEd').value);toast('📋 bot.py copied')};
 $('#btnCopyReq').onclick=()=>{navigator.clipboard.writeText($('#reqEd').value);toast('📋 requirements.txt copied')};
 $('#btnDownload').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#codeEd').value],{type:'text/x-python'}));a.download='bot.py';a.click();toast('⬇️ bot.py downloaded')};
+renderLibs(); syncReq(); updateCodeStats();
 
 /* ================= restricted console v3 (hidden entry, server-side auth) ================= */
 const XKEY='x_console_cfg_v1';
@@ -1128,7 +1165,7 @@ async function refreshAll(silent){
 function fillFlags(f){
   const v=(id,val)=>{const e=$(id);if(e)e.checked=!!val}, s=(id,val)=>{const e=$(id);if(e&&val!==undefined)e.value=val||''};
   v('#xfMaintenance',f.maintenance);v('#xfReg',f.registrations_open!==false);v('#xfDeploy',f.deploy_enabled!==false);
-  v('#xfTpl',f.show_templates!==false);v('#xfPricing',f.show_pricing!==false);v('#xfFaq',f.show_faq!==false);
+  v('#xfPricing',f.show_pricing!==false);v('#xfFaq',f.show_faq!==false);
   v('#xfPlay',f.show_playground!==false);v('#xfBotsSec',f.show_bots_section!==false);
   s('#xfAnnounce',f.announcement);s('#xfTitle',f.site_title);s('#xfBrand',f.brand_name);s('#xfHero',f.hero_title);
   s('#xfHeroSub',f.hero_subtitle);s('#xfFooter',f.footer_text);s('#xfSupport',f.support_url);
@@ -1201,7 +1238,7 @@ $('#xsHealth').onclick=()=>runHealth('#xsHealthOut');
 function updatePreview(){const h=$('#xfHero').value,s=$('#xfHeroSub').value; $('#pvHero').innerHTML=h||'Host Python Telegram Bots'; $('#pvSub').textContent=s||'Live preview of your public hero section.'}
 ['xfHero','xfHeroSub','xfBrand','xfAnnounce'].forEach(id=>{const e=document.getElementById(id); if(e)e.addEventListener('input',updatePreview)});
 let xAccent=''; $$('#xfAccent .swatch').forEach(b=>b.onclick=()=>{xAccent=b.dataset.accent;$$('#xfAccent .swatch').forEach(x=>x.style.outline='');b.style.outline='2px solid #fff';toast('Accent selected — Save to apply')});
-function collectFlags(){return {maintenance:$('#xfMaintenance').checked,registrations_open:$('#xfReg').checked,deploy_enabled:$('#xfDeploy').checked,show_templates:$('#xfTpl').checked,show_pricing:$('#xfPricing').checked,show_faq:$('#xfFaq').checked,show_playground:$('#xfPlay').checked,show_bots_section:$('#xfBotsSec').checked,announcement:$('#xfAnnounce').value.trim(),site_title:$('#xfTitle').value.trim(),brand_name:$('#xfBrand').value.trim(),hero_title:$('#xfHero').value.trim(),hero_subtitle:$('#xfHeroSub').value.trim(),footer_text:$('#xfFooter').value.trim(),support_url:$('#xfSupport').value.trim(),maintenance_message:$('#xfMaintMsg').value.trim(),max_bots_per_user:$('#xfMaxBots').value.trim(),accent:xAccent,default_framework:$('#xfFramework').value,default_region:$('#xfRegion').value}}
+function collectFlags(){return {maintenance:$('#xfMaintenance').checked,registrations_open:$('#xfReg').checked,deploy_enabled:$('#xfDeploy').checked,show_pricing:$('#xfPricing').checked,show_faq:$('#xfFaq').checked,show_playground:$('#xfPlay').checked,show_bots_section:$('#xfBotsSec').checked,announcement:$('#xfAnnounce').value.trim(),site_title:$('#xfTitle').value.trim(),brand_name:$('#xfBrand').value.trim(),hero_title:$('#xfHero').value.trim(),hero_subtitle:$('#xfHeroSub').value.trim(),footer_text:$('#xfFooter').value.trim(),support_url:$('#xfSupport').value.trim(),maintenance_message:$('#xfMaintMsg').value.trim(),max_bots_per_user:$('#xfMaxBots').value.trim(),accent:xAccent,default_framework:$('#xfFramework').value,default_region:$('#xfRegion').value}}
 $$('[data-xpane="site"] input,[data-xpane="site"] textarea,[data-xpane="site"] select').forEach(el=>el.addEventListener('input',()=>{siteDirty=true;const b=$('#xfSave');if(b)b.textContent='💾 Save & Apply Live ●'}));
 $('#xfSave').onclick=async()=>{
   xCfg=collectFlags(); localStorage.setItem(XKEY,JSON.stringify(xCfg)); applySiteCfg(xCfg); siteDirty=false; $('#xfSave').textContent='💾 Save & Apply Live';
