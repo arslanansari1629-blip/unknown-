@@ -4,7 +4,9 @@ A private, no-login browser dashboard for testing, deploying and managing Python
 
 **Stack:** React 19 + Vite 6 + Tailwind CSS 4 + CodeMirror 6 + Pyodide Web Workers + stateless Vercel Node functions.
 
-> Important: this is a browser runtime, not 24/7 hosting. Bots run while the dashboard tab is open. Closing the tab pauses them. Pyrogram is detected but cannot run in a browser because MTProto needs raw TCP sockets.
+> Important: this is a browser runtime, not closed-browser hosting. Bots run while a dashboard tab is open. **Autopilot / Uptime Shield** can keep a spare open browser/device alive 24/7 with leader election, wake lock, watchdog restarts and auto-resume, but no browser-only app can execute Python after every tab/device is closed. Pyrogram is detected but cannot run in a browser because MTProto needs raw TCP sockets.
+
+Live app: https://bothost-serverless.vercel.app
 
 ---
 
@@ -21,6 +23,7 @@ A private, no-login browser dashboard for testing, deploying and managing Python
 - Live audit logs for incoming messages, commands, Telegram API calls, timestamps and Python output.
 - Deploy, pause/resume, restart, delete, clear logs, export logs, export/import workspace.
 - Same-origin Vercel relay for Telegram Bot API calls. The relay stores no tokens, code, logs or bot state.
+- **Autopilot / Uptime Shield**: in-app keep-awake, leader election, watchdog self-healing, auto-resume, uptime telemetry, PWA install and offline app shell — no external runner or added service.
 
 ## Runtime boundaries
 
@@ -125,6 +128,31 @@ Restart flushes the log buffer and resets execution state while preserving lifet
 
 ---
 
+## Autopilot / Uptime Shield
+
+Autopilot is the maximum “24/7” mode possible **inside this app without external infrastructure**. Open **Autopilot**, mark bots as keep-running targets, then click **Arm Autopilot**. Keep one browser tab open on a spare device/browser.
+
+What it does:
+
+- **Leader election** — Web Locks API elects one leader tab; a localStorage lease + BroadcastChannel fallback is used when Web Locks are unavailable. Followers do not poll Telegram, preventing duplicate `getUpdates` consumers.
+- **Auto-resume** — bots marked `desiredRunning` are resumed after reload, crash, failover or network recovery.
+- **Watchdog** — every 10 seconds it checks worker liveness, heartbeat freshness and startup stalls. Transient failures restart with exponential backoff: 5s → 10s → 20s → 40s → … capped at 5 minutes. Healthy polling for 5 minutes resets the backoff.
+- **Permanent-error stop** — bad token, syntax/indentation errors, unsupported frameworks, missing modules and webhook conflicts disable automatic retries until you fix and resume the bot.
+- **Wake lock** — requests the Screen Wake Lock API while the leader tab is visible and re-acquires it when the tab becomes visible again.
+- **Optional audio keepalive** — a user-gesture-armed near-silent 20 Hz tone can reduce background tab throttling on some browsers. It uses a little CPU/battery and is off by default.
+- **Persistent storage** — requests `navigator.storage.persist()` to reduce browser eviction risk.
+- **PWA / offline shell** — installable manifest, icons and a service worker that caches the UI, Pyodide runtime and wheels. It **never** caches `/api/*`; Telegram traffic always hits the live relay.
+- **Telemetry** — shield uptime, recovery count, session count, leader diagnostics and a bounded Autopilot event feed.
+- **Kiosk/fullscreen** — optional fullscreen mode for a dedicated spare screen.
+
+### The honest boundary
+
+Autopilot can keep a **spare device/browser that stays open** alive 24/7. It cannot execute Python after the browser/device is fully closed, the OS kills the process, or power/network is gone. No browser-only system can. For true closed-browser hosting you still need a server/runner; this mode is the maximum possible without adding external infrastructure.
+
+Service worker registration is production-only so Vite HMR and e2e tests never fight a stale cache. In development, `/manifest.webmanifest` and `/sw.js` are still served as static files.
+
+---
+
 ## Architecture
 
 ```text
@@ -153,8 +181,12 @@ https://api.telegram.org
 | `src/lib/analysis.js` | Import masking, dependency mapping, token extraction, redaction, structural preflight, requirements parsing |
 | `src/lib/storage.js` | IndexedDB/localStorage persistence, workspace normalization, log buffers, export helpers |
 | `src/lib/runtime.js` | Validator worker and live/test bot worker controller |
-| `src/lib/useBotHost.js` | Deployment lifecycle, metrics, logs, pause/resume/restart/delete, workspace import/reset |
-| `src/workers/python.worker.js` | Pyodide boot, micropip installs, Telegram transports, mocked test API, stdout/stderr capture |
+| `src/lib/useBotHost.js` | Deployment lifecycle, metrics, logs, pause/resume/restart/delete, workspace import/reset, Autopilot desired-state and recovery actions |
+| `src/lib/autopilot.js` | DOM-free Autopilot policy: backoff, permanent errors, recovery reasons, settings/stats normalization |
+| `src/lib/useAutopilot.js` | Leader election, watchdog sweep, wake lock, audio keepalive, persistence, notifications, PWA/install diagnostics |
+| `src/components/Autopilot.jsx` | Uptime Shield controls, targets, telemetry and event feed |
+| `public/manifest.webmanifest`, `public/sw.js`, `public/icons/` | Installable PWA manifest, offline app-shell/runtime cache and icons |
+| `src/workers/python.worker.js` | Pyodide boot, micropip installs, Telegram transports, mocked test API, stdout/stderr capture, live heartbeats |
 | `api/_relay.js` | Stateless Telegram relay, origin checks, rate limiting, method allowlist, payload limits |
 | `api/telegram.js` | Vercel function entrypoint |
 | `api/health.js` | Health probe |

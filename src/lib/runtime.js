@@ -38,6 +38,7 @@ export class BotRuntime {
     this.disposed = false;
     this.startupTimer = null;
     this.polling = false;
+    this.lastHeartbeat = Date.now();
   }
 
   start() {
@@ -69,12 +70,18 @@ export class BotRuntime {
           handlers.onLog(message.level, redact(message.message, bot.token));
           break;
         case 'polling':
+          this.lastHeartbeat = Date.now();
+          handlers.onHeartbeat?.(this.lastHeartbeat);
           if (!this.polling) {
             this.polling = true;
             clearTimeout(this.startupTimer);
             handlers.onStatus('running');
             handlers.onLog('info', 'Long polling connected. Waiting for Telegram messages.');
           }
+          break;
+        case 'heartbeat':
+          this.lastHeartbeat = Number(message.at) || Date.now();
+          handlers.onHeartbeat?.(this.lastHeartbeat);
           break;
         case 'updates':
           handlers.onUpdates(message.updates || []);

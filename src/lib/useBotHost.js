@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { analyzeDependencies, extractToken, parseRequirements, preflightPython, redact } from './analysis.js';
-import { appendLog, defaultState, loadState, makeLog, MAX_BOTS, MAX_LOGS, normalizeState, saveState, storageBackend, uid } from './storage.js';
+import { appendLog, defaultState, loadState, makeLog, MAX_AUTOPILOT_EVENTS, MAX_BOTS, MAX_LOGS, normalizeState, saveState, storageBackend, uid } from './storage.js';
 import { BotRuntime, telegramRequest, validatePython } from './runtime.js';
+import { backoffDelay, CAPACITY_RETRY_MS, isPermanentError, STABLE_RESET_MS } from './autopilot.js';
 
 const ACTIVE = new Set(['running', 'connecting', 'installing', 'validating']);
 const MAX_ACTIVE = 3;
@@ -15,6 +16,7 @@ export function useBotHost() {
   const runtimes = useRef(new Map());
   const testRuntime = useRef(null);
   const saveTimer = useRef(null);
+  const leadership = useRef(true);
   stateRef.current = state;
 
   useEffect(() => {
@@ -52,9 +54,16 @@ export function useBotHost() {
     const flush = () => {
       if (!ready) return;
       const snapshot = stateRef.current;
+      const armed = snapshot.settings.autopilot?.enabled;
       const paused = {
         ...snapshot,
-        bots: snapshot.bots.map((bot) => ACTIVE.has(bot.status) ? { ...bot, status: 'paused', logs: [...bot.logs, makeLog('warn', 'Dashboard closed. Bot paused automatically; resume after reopening.')].slice(-MAX_LOGS) } : bot),
+        bots: snapshot.bots.map((bot) => ACTIVE.has(bot.status) ? {
+          ...bot,
+          status: 'paused',
+          logs: [...bot.logs, makeLog('warn', armed
+            ? 'Dashboard closed. Worker paused; Autopilot will resume this bot when a leader tab is open again.'
+            : 'Dashboard closed. Bot paused automatically; resume after reopening.')].slice(-MAX_LOGS),
+        } : bot),
       };
       stateRef.current = paused;
       setState(paused);
@@ -78,12 +87,22 @@ export function useBotHost() {
 
   const activeCount = useCallback(() => stateRef.current.bots.filter((bot) => ACTIVE.has(bot.status)).length + (testRuntime.current && !testRuntime.current.disposed ? 1 : 0), []);
 
+  const canRunHere = useCallback(() => {
+    const ap = stateRef.current.settings.autopilot;
+    return !ap?.enabled || !ap?.leaderOnly || leadership.current;
+  }, []);
+
   const startRuntime = useCallback((bot, requirements) => {
+    if (!canRunHere()) {
+      logBot(bot.id, 'warn', 'Autopilot follower tab: another tab is the elected leader, so this worker was not started.');
+      return null;
+    }
     runtimes.current.get(bot.id)?.stop();
     const handlers = {
-      onStatus: (status) => updateBot(bot.id, (current) => ({ ...current, status, updatedAt: Date.now(), lastError: status === 'running' ? '' : current.lastError })),
+      onStatus: (status) => updateBot(bot.id, (current) => ({ ...current, status, updatedAt: Date.now(), lastHeartbeat: status === 'running' ? Date.now() : current.lastHeartbeat, lastError: status === 'running' ? '' : current.lastError })),
+      onHeartbeat: (at) => updateBot(bot.id, (current) => ({ ...current, lastHeartbeat: at || Date.now() })),
       onLog: (level, message) => logBot(bot.id, level, message),
-      onFatal: (message) => updateBot(bot.id, (current) => appendLog({ ...current, status: 'error', lastError: message }, 'error', message)),
+      onFatal: (message) => updateBot(bot.id, (current) => appendLog({ ...current, status: 'error', lastError: message, desiredRunning: isPermanentError(message) ? false : current.desiredRunning }, 'error', message)),
       onApi: (entry) => logBot(bot.id, 'api', `${entry.method} · HTTP ${entry.status} · ${entry.duration} ms`, entry),
       onUpdates: (updates) => updateBot(bot.id, (current) => {
         const seen = new Set(current.seenIds);
@@ -111,7 +130,8 @@ export function useBotHost() {
     const runtime = new BotRuntime(bot, { mode: 'live', requirements }, handlers);
     runtimes.current.set(bot.id, runtime);
     runtime.start();
-  }, [logBot, updateBot]);
+    return runtime;
+  }, [canRunHere, logBot, updateBot]);
 
   const setDraft = useCallback((patch) => {
     setState((current) => ({ ...current, draft: { ...current.draft, ...patch } }));
@@ -119,6 +139,7 @@ export function useBotHost() {
 
   const deploy = useCallback(async (draft) => {
     if (!ready) return { ok: false, error: 'Workspace is still loading.' };
+    if (!canRunHere()) return { ok: false, error: 'This tab is an Autopilot follower. Deploy from the leader tab, or turn off leader-only mode.' };
     if (stateRef.current.bots.length >= MAX_BOTS) return { ok: false, error: `This workspace supports up to ${MAX_BOTS} saved bots. Delete one before deploying.` };
     if (activeCount() >= MAX_ACTIVE) return { ok: false, error: `At most ${MAX_ACTIVE} Python workers can run at once. Pause a bot or stop the test first.` };
     const analysis = analyzeDependencies(draft.code);
@@ -136,7 +157,8 @@ export function useBotHost() {
     let bot = {
       id, name: draft.name.trim() || 'Untitled bot', code: draft.code, token: tokenInfo.token,
       requirements: draft.requirements, framework: analysis.framework, username: '', telegramId: null,
-      status: 'validating', createdAt: now, updatedAt: now, deployedAt: now, messages: 0, errors: 0,
+      status: 'validating', desiredRunning: true, restartCount: 0, nextRetryAt: 0, lastHeartbeat: 0, lastRecoveryAt: 0,
+      createdAt: now, updatedAt: now, deployedAt: now, messages: 0, errors: 0,
       offset: 0, seenIds: [], logs: [makeLog('info', 'Deployment requested. Validating Python syntax…')], lastError: '',
     };
     setState((current) => ({ ...current, bots: [bot, ...current.bots], selectedBotId: id }));
@@ -160,38 +182,40 @@ export function useBotHost() {
       updateBot(id, (current) => appendLog({ ...current, status: 'error', lastError: message }, 'error', message));
       return { ok: false, error: message };
     }
-  }, [activeCount, logBot, ready, startRuntime, updateBot]);
+  }, [activeCount, canRunHere, logBot, ready, startRuntime, updateBot]);
 
   const pause = useCallback((id) => {
     runtimes.current.get(id)?.stop();
     runtimes.current.delete(id);
-    updateBot(id, (bot) => appendLog({ ...bot, status: 'paused' }, 'warn', 'Bot paused. Incoming messages are queued by Telegram until you resume.'));
+    updateBot(id, (bot) => appendLog({ ...bot, status: 'paused', desiredRunning: false, nextRetryAt: 0 }, 'warn', 'Bot paused. Incoming messages are queued by Telegram until you resume.'));
   }, [updateBot]);
 
   const resume = useCallback((id) => {
     const bot = stateRef.current.bots.find((item) => item.id === id);
     if (!bot) return { ok: false, error: 'Bot not found.' };
+    if (!canRunHere()) return { ok: false, error: 'This tab is an Autopilot follower. Resume from the leader tab, or turn off leader-only mode.' };
     if (activeCount() >= MAX_ACTIVE) return { ok: false, error: `At most ${MAX_ACTIVE} workers can run at once.` };
     const reqs = parseRequirements(bot.requirements);
     if (reqs.errors.length) return { ok: false, error: reqs.errors[0] };
-    updateBot(id, (current) => appendLog({ ...current, status: 'connecting', lastError: '' }, 'info', 'Resuming browser worker…'));
+    updateBot(id, (current) => appendLog({ ...current, status: 'connecting', lastError: '', desiredRunning: true, nextRetryAt: 0 }, 'info', 'Resuming browser worker…'));
     startRuntime(bot, reqs.requirements);
     return { ok: true };
-  }, [activeCount, startRuntime, updateBot]);
+  }, [activeCount, canRunHere, startRuntime, updateBot]);
 
   const restart = useCallback((id) => {
     const bot = stateRef.current.bots.find((item) => item.id === id);
     if (!bot) return { ok: false, error: 'Bot not found.' };
+    if (!canRunHere()) return { ok: false, error: 'This tab is an Autopilot follower. Restart from the leader tab, or turn off leader-only mode.' };
     runtimes.current.get(id)?.stop();
     runtimes.current.delete(id);
     const wasActive = ACTIVE.has(bot.status);
     if (!wasActive && activeCount() >= MAX_ACTIVE) return { ok: false, error: `At most ${MAX_ACTIVE} workers can run at once.` };
-    const fresh = { ...bot, logs: [makeLog('info', 'Restart requested. Log buffer flushed and execution state reset.')], errors: 0, lastError: '', status: 'connecting' };
+    const fresh = { ...bot, logs: [makeLog('info', 'Restart requested. Log buffer flushed and execution state reset.')], errors: 0, lastError: '', status: 'connecting', desiredRunning: true, nextRetryAt: 0 };
     updateBot(id, () => fresh);
     const reqs = parseRequirements(bot.requirements);
     startRuntime(fresh, reqs.requirements);
     return { ok: true };
-  }, [activeCount, startRuntime, updateBot]);
+  }, [activeCount, canRunHere, startRuntime, updateBot]);
 
   const remove = useCallback((id) => {
     runtimes.current.get(id)?.stop();
@@ -204,6 +228,92 @@ export function useBotHost() {
 
   const selectBot = useCallback((id) => setState((current) => ({ ...current, selectedBotId: id })), []);
   const clearLogs = useCallback((id) => updateBot(id, (bot) => ({ ...bot, logs: [makeLog('info', 'Log buffer cleared.')], updatedAt: Date.now() })), [updateBot]);
+
+  const setAutopilotSettings = useCallback((patch) => {
+    setState((current) => ({ ...current, settings: { ...current.settings, autopilot: { ...current.settings.autopilot, ...patch } } }));
+  }, []);
+
+  const logAutopilotEvent = useCallback((level, message) => {
+    setState((current) => ({ ...current, autopilotEvents: [...current.autopilotEvents, makeLog(level, message)].slice(-MAX_AUTOPILOT_EVENTS) }));
+  }, []);
+
+  const updateAutopilotStats = useCallback((patch) => {
+    setState((current) => ({ ...current, autopilotStats: { ...current.autopilotStats, ...(typeof patch === 'function' ? patch(current.autopilotStats) : patch) } }));
+  }, []);
+
+  const clearAutopilotEvents = useCallback(() => setState((current) => ({ ...current, autopilotEvents: [] })), []);
+
+  const setDesiredRunning = useCallback((id, desired) => {
+    updateBot(id, (bot) => ({ ...bot, desiredRunning: Boolean(desired), nextRetryAt: 0, updatedAt: Date.now() }));
+    if (!desired) {
+      runtimes.current.get(id)?.stop();
+      runtimes.current.delete(id);
+      updateBot(id, (bot) => ACTIVE.has(bot.status) ? appendLog({ ...bot, status: 'paused' }, 'warn', 'Autopilot target removed. Worker paused.') : bot);
+    }
+  }, [updateBot]);
+
+  const setLeadership = useCallback((isLeader) => {
+    const wasLeader = leadership.current;
+    leadership.current = Boolean(isLeader);
+    if (wasLeader === leadership.current) return;
+    if (!leadership.current) {
+      runtimes.current.forEach((runtime) => runtime.stop());
+      runtimes.current.clear();
+      setState((current) => ({
+        ...current,
+        bots: current.bots.map((bot) => ACTIVE.has(bot.status) ? appendLog({ ...bot, status: 'paused' }, 'warn', 'Autopilot failover: this tab is now a follower. The elected leader tab owns the workers.') : bot),
+      }));
+    }
+  }, []);
+
+  const getRuntimeAlive = useCallback((id) => {
+    const runtime = runtimes.current.get(id);
+    return Boolean(runtime && !runtime.disposed);
+  }, []);
+
+  const recoverBot = useCallback((id, reason) => {
+    const bot = stateRef.current.bots.find((item) => item.id === id);
+    if (!bot || !bot.desiredRunning) return { ok: false, error: 'Bot is not an Autopilot target.' };
+    if (!canRunHere()) return { ok: false, error: 'Follower tab cannot recover workers.' };
+    if (isPermanentError(bot.lastError)) {
+      updateBot(id, (current) => appendLog({ ...current, desiredRunning: false, nextRetryAt: 0 }, 'error', `Autopilot stopped retrying a permanent error: ${current.lastError}`));
+      logAutopilotEvent('error', `${bot.name}: permanent error; automatic retries disabled.`);
+      return { ok: false, error: 'Permanent error; fix the script/token and resume manually.' };
+    }
+    const wasActive = ACTIVE.has(bot.status);
+    if (!wasActive && activeCount() >= MAX_ACTIVE) {
+      updateBot(id, (current) => ({ ...current, nextRetryAt: Date.now() + CAPACITY_RETRY_MS }));
+      return { ok: false, error: 'Worker capacity reached; retry scheduled.' };
+    }
+    const reqs = parseRequirements(bot.requirements);
+    if (reqs.errors.length) {
+      updateBot(id, (current) => appendLog({ ...current, desiredRunning: false, status: 'error', lastError: reqs.errors[0] }, 'error', reqs.errors[0]));
+      return { ok: false, error: reqs.errors[0] };
+    }
+    runtimes.current.get(id)?.stop();
+    runtimes.current.delete(id);
+    const attempt = (Number(bot.restartCount) || 0) + 1;
+    const delay = backoffDelay(attempt);
+    const now = Date.now();
+    const fresh = {
+      ...bot,
+      status: 'connecting',
+      lastError: '',
+      restartCount: attempt,
+      nextRetryAt: now + delay,
+      lastRecoveryAt: now,
+      logs: [...bot.logs, makeLog('warn', `Autopilot recovery #${attempt}: ${reason}. Next retry in ${Math.round(delay / 1000)}s if needed.`)].slice(-MAX_LOGS),
+    };
+    updateBot(id, () => fresh);
+    startRuntime(fresh, reqs.requirements);
+    updateAutopilotStats((stats) => ({ recoveries: stats.recoveries + 1 }));
+    logAutopilotEvent('warn', `${bot.name}: ${reason} → recovery #${attempt} started.`);
+    return { ok: true };
+  }, [activeCount, canRunHere, logAutopilotEvent, startRuntime, updateAutopilotStats, updateBot]);
+
+  const markStable = useCallback((id) => {
+    updateBot(id, (bot) => bot.restartCount > 0 ? appendLog({ ...bot, restartCount: 0, nextRetryAt: 0 }, 'info', `Autopilot stabilized this bot after ${Math.round(STABLE_RESET_MS / 60000)} minutes of healthy polling. Retry backoff reset.`) : bot);
+  }, [updateBot]);
 
   const stopTest = useCallback(() => {
     testRuntime.current?.stop();
@@ -284,5 +394,7 @@ export function useBotHost() {
     state, ready, storage, test, activeCount: state.bots.filter((bot) => ACTIVE.has(bot.status)).length,
     setDraft, deploy, pause, resume, restart, remove, selectBot, clearLogs, runTest, stopTest, verifyToken,
     importWorkspace, resetWorkspace, exportState: state,
+    setAutopilotSettings, logAutopilotEvent, updateAutopilotStats, clearAutopilotEvents,
+    setDesiredRunning, setLeadership, getRuntimeAlive, recoverBot, markStable,
   };
 }

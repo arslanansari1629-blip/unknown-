@@ -1,3 +1,5 @@
+import { normalizeAutopilotSettings, normalizeAutopilotStats } from './autopilot.js';
+
 export const STORAGE_KEY = 'bothost-serverless:v1';
 export const MAX_LOGS = 500;
 export const MAX_BOTS = 25;
@@ -13,13 +15,34 @@ export function makeLog(level, message, extra = {}) {
   return { id: uid('log'), at: Date.now(), level, message: String(message).slice(0, 4000), ...extra };
 }
 
+export const MAX_AUTOPILOT_EVENTS = 200;
+
+export function defaultAutopilot() {
+  return {
+    enabled: false,
+    autoResume: true,
+    wakeLock: true,
+    silentAudio: false,
+    watchdog: true,
+    notifications: false,
+    leaderOnly: true,
+    kiosk: false,
+  };
+}
+
+export function defaultAutopilotStats() {
+  return { uptimeMs: 0, recoveries: 0, sessions: 0, lastStartedAt: null, leaderSince: null };
+}
+
 export function defaultState() {
   return {
     version: 1,
     bots: [],
     draft: { name: '', code: '', token: '', requirements: '', autoRequirements: true },
     selectedBotId: null,
-    settings: { revealTokens: false },
+    settings: { revealTokens: false, autopilot: defaultAutopilot() },
+    autopilotStats: defaultAutopilotStats(),
+    autopilotEvents: [],
   };
 }
 
@@ -126,15 +149,26 @@ export function normalizeState(input) {
     bots,
     draft: { ...base.draft, ...(input.draft && typeof input.draft === 'object' ? input.draft : {}) },
     selectedBotId: bots.some((b) => b.id === input.selectedBotId) ? input.selectedBotId : bots[0]?.id || null,
-    settings: { ...base.settings, ...(input.settings || {}) },
+    settings: {
+      ...base.settings,
+      ...(input.settings || {}),
+      autopilot: normalizeAutopilotSettings(input.settings?.autopilot),
+    },
+    autopilotStats: normalizeAutopilotStats(input.autopilotStats),
+    autopilotEvents: Array.isArray(input.autopilotEvents) ? input.autopilotEvents.slice(-MAX_AUTOPILOT_EVENTS) : [],
   };
 }
 
 export function normalizeBot(bot) {
   if (!bot || typeof bot !== 'object' || typeof bot.id !== 'string') return null;
   const wasRunning = ['running', 'connecting', 'installing', 'validating', 'stopping'].includes(bot.status);
+  const desiredRunning = typeof bot.desiredRunning === 'boolean' ? bot.desiredRunning : wasRunning;
   const logs = Array.isArray(bot.logs) ? bot.logs.slice(-MAX_LOGS) : [];
-  if (wasRunning) logs.push(makeLog('warn', 'Browser session restored. The bot is paused; press Resume to reconnect. Bots do not run while this dashboard is closed.'));
+  if (wasRunning) {
+    logs.push(makeLog('warn', desiredRunning
+      ? 'Browser session restored. The bot is paused; Autopilot resumes it automatically when armed, otherwise press Resume. Bots do not run while every dashboard tab is closed.'
+      : 'Browser session restored. The bot is paused; press Resume to reconnect. Bots do not run while this dashboard is closed.'));
+  }
   return {
     id: bot.id,
     name: String(bot.name || 'Untitled bot').slice(0, 80),
@@ -145,6 +179,11 @@ export function normalizeBot(bot) {
     username: bot.username || '',
     telegramId: bot.telegramId || null,
     status: wasRunning ? 'paused' : ['paused', 'stopped', 'error', 'draft'].includes(bot.status) ? bot.status : 'stopped',
+    desiredRunning,
+    restartCount: Math.max(0, Number(bot.restartCount) || 0),
+    nextRetryAt: Math.max(0, Number(bot.nextRetryAt) || 0),
+    lastHeartbeat: Math.max(0, Number(bot.lastHeartbeat) || 0),
+    lastRecoveryAt: Math.max(0, Number(bot.lastRecoveryAt) || 0),
     createdAt: Number(bot.createdAt) || Date.now(),
     updatedAt: Number(bot.updatedAt) || Date.now(),
     deployedAt: Number(bot.deployedAt) || null,

@@ -7,6 +7,7 @@ let testUpdateDelivered = false;
 let testFinished = false;
 let consecutiveFailures = 0;
 let messageId = 100;
+let heartbeatTimer = null;
 const startedAt = Date.now();
 
 function post(type, data = {}) {
@@ -35,6 +36,7 @@ function parseTelegramUrl(url) {
 }
 
 function auditResponse(method, status, body, duration) {
+  if (config?.mode === 'live') post('heartbeat', { at: Date.now() });
   if (!(config?.mode === 'test' && method === 'getUpdates' && Array.isArray(body?.result) && body.result.length === 0)) {
     post('api', { method, status, duration, at: Date.now() });
   }
@@ -188,6 +190,8 @@ json.dumps(result)
 async function run(message) {
   config = message;
   post('status', { status: 'installing' });
+  heartbeatTimer = setInterval(() => post('heartbeat', { at: Date.now() }), 15_000);
+  post('heartbeat', { at: Date.now() });
   await boot();
   const manifestResponse = await fetch(`${BASE}/wheels/manifest.json`);
   if (!manifestResponse.ok) throw new Error('Python package manifest is missing. Rebuild the app with npm run build.');

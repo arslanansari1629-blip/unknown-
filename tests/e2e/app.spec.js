@@ -77,3 +77,35 @@ test('relay health endpoint is stateless and reachable', async ({ request }) => 
   expect(body.storage).toBe('browser-only');
   expect(body.mode).toBe('stateless-telegram-relay');
 });
+
+test('autopilot arms, elects a leader and persists across reload', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Autopilot', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Autopilot', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Arm Autopilot' }).click();
+  await expect(page.getByText('Uptime Shield armed')).toBeVisible();
+  await expect(page.getByText('Leader tab', { exact: true })).toBeVisible();
+  await page.getByRole('switch', { name: 'Watchdog', exact: true }).click();
+  await expect(page.getByRole('switch', { name: 'Watchdog', exact: true })).toHaveAttribute('aria-checked', 'false');
+  await page.waitForTimeout(400);
+  await page.reload();
+  await page.getByRole('button', { name: 'Autopilot', exact: true }).click();
+  await expect(page.getByText('Uptime Shield armed')).toBeVisible();
+  await expect(page.getByRole('switch', { name: 'Watchdog', exact: true })).toHaveAttribute('aria-checked', 'false');
+  await page.getByRole('button', { name: 'Disarm Autopilot' }).click();
+  await expect(page.getByText('Uptime Shield standby')).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test('PWA manifest and service worker are served', async ({ request }) => {
+  const manifest = await request.get('/manifest.webmanifest');
+  expect(manifest.ok()).toBeTruthy();
+  const body = await manifest.json();
+  expect(body.name).toBe('BotHost Serverless');
+  expect(body.display).toBe('standalone');
+  const sw = await request.get('/sw.js');
+  expect(sw.ok()).toBeTruthy();
+  expect(await sw.text()).toContain('NEVER caches /api');
+});

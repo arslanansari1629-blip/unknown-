@@ -3,7 +3,7 @@ import { Database, Download, Upload, Trash2, ShieldCheck, Cpu, Globe, HardDrive,
 import { exportWorkspace } from '../lib/storage.js';
 import { Modal } from './ui.jsx';
 
-export default function Settings({ host, notify }) {
+export default function Settings({ host, notify, navigate }) {
   const fileRef = useRef(null);
   const [resetting, setResetting] = useState(false);
   const importFile = async (event) => {
@@ -28,7 +28,8 @@ export default function Settings({ host, notify }) {
         </section>
         <section className="card p-5">
           <div className="mb-4 flex items-center gap-2"><Cpu size={17} className="text-sky-300" /><h2 className="text-sm font-semibold text-white">Execution model</h2></div>
-          <ul className="space-y-3 text-sm leading-6 text-slate-400"><li className="flex gap-2"><ShieldCheck size={15} className="mt-1 shrink-0 text-emerald-300" />Python runs in Pyodide inside a dedicated Web Worker, never on the Vercel function.</li><li className="flex gap-2"><Globe size={15} className="mt-1 shrink-0 text-sky-300" />Telegram Bot API calls use a same-origin, stateless Vercel relay to avoid browser CORS restrictions.</li><li className="flex gap-2"><HardDrive size={15} className="mt-1 shrink-0 text-violet-300" />The relay stores no tokens, code, logs or bot state. It only forwards allowlisted Bot API methods.</li><li className="flex gap-2"><Cpu size={15} className="mt-1 shrink-0 text-amber-300" />Up to three concurrent workers. Bots pause when the dashboard closes; this is not always-on hosting.</li></ul>
+          <ul className="space-y-3 text-sm leading-6 text-slate-400"><li className="flex gap-2"><ShieldCheck size={15} className="mt-1 shrink-0 text-emerald-300" />Python runs in Pyodide inside a dedicated Web Worker, never on the Vercel function.</li><li className="flex gap-2"><Globe size={15} className="mt-1 shrink-0 text-sky-300" />Telegram Bot API calls use a same-origin, stateless Vercel relay to avoid browser CORS restrictions.</li><li className="flex gap-2"><HardDrive size={15} className="mt-1 shrink-0 text-violet-300" />The relay stores no tokens, code, logs or bot state. It only forwards allowlisted Bot API methods.</li><li className="flex gap-2"><Cpu size={15} className="mt-1 shrink-0 text-amber-300" />Up to three concurrent workers. Autopilot can auto-resume, self-heal and keep one open browser tab awake, but bots still pause when every tab/device is closed. This is not closed-browser hosting.</li></ul>
+          <button className="btn-secondary mt-5" onClick={() => navigate?.('autopilot')}><ShieldCheck size={15} />Open Autopilot controls</button>
         </section>
         <section className="card p-5 lg:col-span-2">
           <div className="mb-4 flex items-center gap-2"><AlertTriangle size={17} className="text-amber-300" /><h2 className="text-sm font-semibold text-white">Framework compatibility</h2></div>
