@@ -1,22 +1,39 @@
 {
-  "name": "editz900s-bot-cloud",
-  "version": "1.0.0",
+  "name": "bothost-serverless",
+  "version": "2.0.0",
   "private": true,
-  "description": "Advanced Telegram bot hosting panel — upload Python, Node.js or any language. No login, no signup, auto-restart forever. Built by editz900s.",
-  "main": "server.js",
-  "author": "editz900s",
-  "license": "MIT",
+  "description": "A private, browser-based Python Telegram bot studio with a stateless Vercel API relay.",
+  "type": "module",
   "engines": {
-    "node": ">=18"
+    "node": ">=22"
   },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "vite --host 0.0.0.0",
+    "build": "node scripts/copy-runtime.mjs && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "start": "vite --host 0.0.0.0",
+    "test": "node --test tests/*.test.js",
+    "test:e2e": "playwright test",
+    "check": "npm run test && npm run build"
   },
   "dependencies": {
-    "adm-zip": "^0.5.16",
-    "express": "^4.21.2",
-    "multer": "^2.0.2",
-    "ws": "^8.18.3"
+    "@codemirror/lang-python": "^6.2.1",
+    "@codemirror/state": "^6.5.2",
+    "@codemirror/theme-one-dark": "^6.1.3",
+    "@codemirror/view": "^6.36.5",
+    "@fontsource-variable/inter": "^5.2.5",
+    "@fontsource/jetbrains-mono": "^5.2.5",
+    "@uiw/react-codemirror": "^4.23.10",
+    "lucide-react": "^0.468.0",
+    "pyodide": "0.27.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.56.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@vitejs/plugin-react": "^4.7.0",
+    "tailwindcss": "^4.1.0",
+    "vite": "^6.4.5"
   }
 }

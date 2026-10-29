@@ -1,217 +1,207 @@
-# ⚡ editz900s Bot Cloud
+# BotHost Serverless
 
-**Advanced Telegram bot hosting panel — no login, no signup, no account.**
-Upload a ZIP, a folder or paste code. Python, Node.js or **any** language runs on a supervised process that restarts itself forever.
+A private, no-login browser dashboard for testing, deploying and managing Python Telegram bots.
 
-Built and maintained by **editz900s**.
+**Stack:** React 19 + Vite 6 + Tailwind CSS 4 + CodeMirror 6 + Pyodide Web Workers + stateless Vercel Node functions.
 
-```
-Frontend  : index.html   (one single file — HTML + CSS + JS, zero dependencies)
-Backend   : server.js    (one single file — Express + WebSocket + supervisor)
-```
+> Important: this is a browser runtime, not 24/7 hosting. Bots run while the dashboard tab is open. Closing the tab pauses them. Pyrogram is detected but cannot run in a browser because MTProto needs raw TCP sockets.
 
 ---
 
-## ✨ Features
+## What works
 
-| | |
+- No signup, no login, no SQL database, no server-side bot storage.
+- Code, tokens, bot settings, metrics and logs persist in IndexedDB, with a localStorage fallback.
+- Dark Code Studio with Python syntax highlighting, starter templates and `.py` import.
+- Regex dependency analysis with a live, editable `requirements.txt` preview.
+- Real Python syntax/indentation validation using Pyodide’s `compile()` before deployment.
+- Browser test runs that execute your handlers against a mocked Telegram Bot API.
+- Live deployment for `telebot` / `pyTelegramBotAPI` and `python-telegram-bot` long polling.
+- Bot fleet table with token masking, status, deployment date, received-message count and error count.
+- Live audit logs for incoming messages, commands, Telegram API calls, timestamps and Python output.
+- Deploy, pause/resume, restart, delete, clear logs, export logs, export/import workspace.
+- Same-origin Vercel relay for Telegram Bot API calls. The relay stores no tokens, code, logs or bot state.
+
+## Runtime boundaries
+
+| Capability | Status |
 |---|---|
-| 🔓 **No login / no signup** | Open the panel and deploy. Optional `PANEL_TOKEN` if you want to lock it. |
-| 🐍 **Python + Node.js first-class** | Auto-detects `requirements.txt`, `package.json`, `bot.py`, `index.js` and picks the right entry file. |
-| 🌍 **Any language** | Bun, Deno, Ruby, PHP, Go, Rust, Java, .NET, Bash, Perl, Lua, Dart, Elixir — or a fully custom start command. |
-| 📦 **Smart uploads** | ZIP archives (auto-strips the top folder), multi-file folders with paths preserved, or paste code straight into the panel. |
-| 🧠 **Auto dependency install** | `pip` inside a virtualenv, `npm install`, `bundle install`, `composer install`, `go mod download`, `cargo build`, `dotnet restore`. |
-| 🔁 **Never shuts down** | Crash → automatic restart with capped exponential backoff. Watchdog re-launches dead processes every 2.5 s. Bots marked running are resumed after a panel reboot. |
-| 🪵 **Live logs** | Real WebSocket streaming of stdout/stderr + stdin input, download and clear. |
-| 🗂 **File manager & editor** | Browse, create, edit, upload, download and delete project files in the browser. |
-| 🔐 **Env / secrets manager** | `.env`-style variables injected into every process — never exposed to the browser bundle. |
-| 📊 **Live metrics** | CPU, RSS memory, uptime, restart count, host load, per-bot process ID. |
-| 🤖 **Telegram token check** | Verifies `BOT_TOKEN` with the official `getMe` API and shows the bot's @username. |
-| 💾 **Persistence** | Metadata, logs and files survive restarts on disk (`data/bots/<id>`). |
+| `telebot` synchronous polling | Supported |
+| `python-telegram-bot` asyncio polling | Supported |
+| Telegram webhooks | Not supported; browser polling requires no active webhook |
+| `pyrogram` / MTProto | Blocked with an actionable message; use a persistent Python host |
+| Always-on execution after closing the tab | Not possible in a browser-only app |
+| Native POSIX threads | Disabled; telebot runs handlers sequentially |
+| Pure-Python PyPI extras | Installed with micropip when available |
+| Native packages without a Pyodide/WASM build | Reported as dependency errors |
+| Concurrent Python workers | 3 |
+| Saved bots per workspace | 25 |
+| Log retention | Latest 500 entries per bot |
+| Relay upload limit | 3 MB multipart |
+
+Pyodide unvendors native `ssl`. The worker installs a small import-compatible TLS shim because Telegram TLS is terminated by the browser and the same-origin relay, not by Python sockets. Native Python TLS socket operations raise a clear error.
+
+Test mode mocks Telegram Bot API traffic only. Other network calls made by your script still execute and are subject to browser CORS.
 
 ---
 
-## 🚀 Quick start
+## Quick start
+
+Requirements: Node.js 22+.
 
 ```bash
-git clone <this-repo> bot-cloud
-cd bot-cloud
-npm install
-npm start
+npm ci
+npm run dev
 ```
 
-Open **http://localhost:8080** — that's it. No account, no setup wizard.
+Open http://localhost:5173.
 
-Requirements: **Node.js 18+**. Python 3 is needed only for Python bots (`python3` + `python3-venv`).
+The Vite dev server also serves the same `/api/telegram` and `/api/health` handlers used on Vercel, so local development does not need a separate backend process.
 
-### Run it 24/7
-
-**Docker**
+### Production build
 
 ```bash
-docker build -t editz900s-bot-cloud .
-docker run -d --name bot-cloud -p 8080:8080 -v botcloud_data:/data --restart always editz900s-bot-cloud
+npm run build
+npm run preview
 ```
 
-**VPS (systemd)**
+`npm run build` copies the pinned Pyodide core from `node_modules/pyodide` into `public/runtime`, then builds the SPA into `dist`. The Python core is self-hosted; no Pyodide CDN is required. Pure-Python wheels are vendored in `public/wheels`.
 
-```ini
-[Unit]
-Description=editz900s Bot Cloud
-After=network.target
-
-[Service]
-WorkingDirectory=/opt/bot-cloud
-ExecStart=/usr/bin/node server.js
-Environment=PORT=8080
-Environment=DATA_DIR=/opt/bot-cloud/data
-Restart=always
-RestartSec=3
-
-[Install]
-WantedBy=multi-user.target
-```
-
-**Render / Railway / Koyeb / Fly.io** — deploy this repository as a Node web service with `npm install` as the build command and `node server.js` as the start command. Mount a persistent disk at `/data` and set `DATA_DIR=/data` so bots survive redeploys.
-
-> ⚠️ Free tiers of some platforms sleep idle containers. Set `SELF_PING_URL` to your public panel URL and the server will ping itself every 4 minutes, and keep an external uptime monitor (e.g. UptimeRobot) pointed at `/api/health` as a second layer.
-
----
-
-## 🖥️ Using the panel
-
-1. **Deploy** → drop a ZIP / folder / source file.
-2. Add `BOT_TOKEN` (and any other secrets) in the environment box.
-3. Press **Deploy bot** — the runtime is detected, dependencies install, the process starts.
-4. Watch **Logs**, edit **Files**, change **Settings**, verify the token in one click.
-
-Your bot keeps running even when you close the tab. Nothing is tied to a browser session.
-
-### Example `.env`
-
-```env
-BOT_TOKEN=1234567890:AAHxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-OWNER_ID=123456789
-DATABASE_URL=postgres://...
-```
-
-### Example start commands
-
-| Project | Command |
-|---|---|
-| Python | `python3 -u bot.py` (auto: `./.venv/bin/python -u bot.py` after install) |
-| Node.js | `npm start` or `node index.js` |
-| Go | `go run .` |
-| Rust | `cargo run --release` |
-| Java | `java -jar app.jar` |
-| Custom | `./my-binary --token $BOT_TOKEN` |
-
-Every command runs inside `/bin/bash` with the project folder as the working directory.
-
----
-
-## ⚙️ Configuration
-
-| Variable | Default | Description |
-|---|---|---|
-| `PORT` | `8080` | HTTP port |
-| `HOST` | `0.0.0.0` | Bind address |
-| `DATA_DIR` | `./data` | Where bots, logs and metadata live |
-| `PANEL_TOKEN` | *(empty)* | Optional shared secret. Open the panel with `?token=...`; API accepts `x-panel-token` or `?token=` |
-| `SELF_PING_URL` | *(empty)* | Public panel URL to self-ping every 4 minutes (keeps free hosts awake) |
-| `MAX_BOTS` | `100` | Maximum number of bots |
-| `MAX_FILE_MB` | `100` | Max size of a single uploaded file |
-
----
-
-## 🔌 HTTP API
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/api/health` | Liveness probe |
-| `GET` | `/api/meta` | App info, runtimes + detected versions, limits |
-| `GET` | `/api/stats` | Fleet and host statistics |
-| `GET` | `/api/bots` | List bots |
-| `POST` | `/api/bots` | Deploy (`multipart/form-data`: `files`, `inlineCode`, `name`, `runtime`, `entry`, `startCmd`, `installCmd`, `env`, `autorun`) |
-| `GET/PATCH/DELETE` | `/api/bots/:id` | Read / update / remove a bot |
-| `POST` | `/api/bots/:id/start` · `/stop` · `/restart` · `/install` | Process control |
-| `POST` | `/api/bots/:id/stdin` | Write to the process stdin |
-| `GET/DELETE` | `/api/bots/:id/logs` | Read / clear logs |
-| `GET` | `/api/bots/:id/files?path=` | List a directory |
-| `GET/PUT/DELETE` | `/api/bots/:id/file?path=` | Read / write / delete a file |
-| `POST` | `/api/bots/:id/upload` | Upload files into an existing bot |
-| `GET` | `/api/bots/:id/download` | Download the project as ZIP |
-| `GET` | `/api/bots/:id/telegram` | Verify the stored Telegram token |
-| `WS` | `/ws` | Live `hello` / `bot` / `log` / `notice` / `deleted` events |
-
-Example:
+### Tests
 
 ```bash
-curl -X POST http://localhost:8080/api/bots \
-  -F "name=my-bot" \
-  -F "files=@bot.zip" \
-  -F 'env={"BOT_TOKEN":"123456:ABC..."}' \
-  -F "autorun=true"
+npm test          # Node unit tests
+npm run test:e2e  # Playwright browser tests
+npm run check     # unit tests + production build
+```
+
+For Playwright on a normal machine:
+
+```bash
+npx playwright install chromium
+```
+
+In constrained Linux sandboxes, `playwright.config.js` can optionally use `@sparticuz/chromium` if it is installed locally. It is not a production dependency.
+
+---
+
+## Deploy to Vercel
+
+1. Push this repository to GitHub.
+2. Import it in Vercel, or use the Vercel CLI/connector.
+3. Use the detected settings:
+   - Framework: **Vite**
+   - Install command: `npm ci`
+   - Build command: `npm run build`
+   - Output directory: `dist`
+4. No environment variables are required.
+5. If your Vercel team enables Deployment Protection by default, disable it for this project if you want the public URL to open without a Vercel login. The app itself has no login.
+
+`vercel.json` configures the SPA rewrite, static runtime caching and function durations. The Telegram relay function is capped at 60 seconds; long-poll requests are capped at 25 seconds upstream.
+
+### Vercel CLI alternative
+
+```bash
+npm i -g vercel
+vercel login
+vercel --prod
 ```
 
 ---
 
-## 🗂 Project structure
+## Using the dashboard
 
+1. Open **Code Studio**.
+2. Load a template or paste/import your Python bot.
+3. Add a BotFather token in the token field, or hardcode a literal token in the script. Environment-style tokens such as `os.environ["BOT_TOKEN"]` are injected from the token field.
+4. Review the generated `requirements.txt`. You can edit it or turn off auto-generation.
+5. Click **Validate** for a real Python compile check.
+6. Click **Test run** to execute handlers against a simulated Telegram update without sending real messages.
+7. Click **Deploy bot**. The app validates syntax, verifies the token with `getMe`, checks for an active webhook, installs dependencies and starts long polling.
+8. Message the bot on Telegram. Watch **Live Logs** and the **Bot Fleet** metrics.
+9. Use pause/resume, restart or delete from the fleet table.
+
+Restart flushes the log buffer and resets execution state while preserving lifetime message counts. Delete removes the local bot record only; it does not delete the BotFather bot.
+
+---
+
+## Architecture
+
+```text
+Browser
+├── React dashboard
+├── IndexedDB workspace persistence
+├── CodeMirror Python editor
+├── Dependency / token / syntax analysis
+└── Pyodide Web Worker per active bot
+    ├── telebot CUSTOM_REQUEST_SENDER
+    ├── python-telegram-bot fetch-backed httpx transport
+    └── mocked Telegram API in test mode
+          │
+          ▼
+Same-origin Vercel function /api/telegram
+└── stateless allowlisted Telegram Bot API relay
+          │
+          ▼
+https://api.telegram.org
 ```
-.
-├── index.html        # entire frontend (UI, styles, WebSocket client)
-├── server.js         # entire backend (API, supervisor, logs, files)
-├── package.json
-├── Dockerfile
-├── Procfile
-├── render.yaml
-└── data/             # created at runtime (gitignored)
-    ├── bots/<id>/bot.json
-    ├── bots/<id>/app.log
-    └── bots/<id>/files/…
-```
 
----
+### Key modules
 
-## 🧠 How "never shut down" works
-
-1. **Exit handler** — when a process exits while `desired = running`, a restart is scheduled with exponential backoff (1 s → 30 s).
-2. **Watchdog** — a 2.5 s interval restarts any bot that should be running but has no process (protects against missed events, OOM kills and spawn failures).
-3. **Boot resume** — every bot whose last state was *running* is relaunched when the panel starts, including after a hard kill of the panel.
-4. **Orphan cleanup** — on boot, leftover processes from a previous panel instance are identified by PID + working directory and replaced cleanly.
-5. **Self-ping** — optional `SELF_PING_URL` keeps sleeping free hosts awake; `/api/health` is ready for external uptime monitors.
-
-A bot only stops when **you** press Stop or Delete.
-
----
-
-## 🔒 Security notes
-
-This panel intentionally has **no authentication** — that is the requested behaviour. It executes code you upload, so treat it like a shell:
-
-* Run it on a VPS/container you control, not on a shared production machine.
-* Put it behind HTTPS and, if it is public, set `PANEL_TOKEN` and open it with `?token=...`.
-* Or restrict access with a reverse proxy, VPN, IP allowlist or Cloudflare Access.
-* Never commit `data/` — it contains bot tokens.
-
----
-
-## 🩺 Troubleshooting
-
-| Symptom | Fix |
+| Path | Responsibility |
 |---|---|
-| Bot says `ModuleNotFoundError` | Open **Settings → Reinstall deps**, or check that `requirements.txt` is at the project root. |
-| Python install fails | Install `python3-venv` and `python3-pip` on the host. |
-| `command not found` at start | That runtime is not installed on the server. Use **Runtimes** to check what is available, or switch to a Docker image that includes it. |
-| Bot exits instantly | Read the logs — a wrong token or missing env variable is the usual cause. |
-| Panel sleeps on a free host | Set `SELF_PING_URL` and add an external uptime monitor. |
-| Token check cannot reach Telegram | The server needs outbound HTTPS access to `api.telegram.org`. |
+| `src/lib/analysis.js` | Import masking, dependency mapping, token extraction, redaction, structural preflight, requirements parsing |
+| `src/lib/storage.js` | IndexedDB/localStorage persistence, workspace normalization, log buffers, export helpers |
+| `src/lib/runtime.js` | Validator worker and live/test bot worker controller |
+| `src/lib/useBotHost.js` | Deployment lifecycle, metrics, logs, pause/resume/restart/delete, workspace import/reset |
+| `src/workers/python.worker.js` | Pyodide boot, micropip installs, Telegram transports, mocked test API, stdout/stderr capture |
+| `api/_relay.js` | Stateless Telegram relay, origin checks, rate limiting, method allowlist, payload limits |
+| `api/telegram.js` | Vercel function entrypoint |
+| `api/health.js` | Health probe |
+| `scripts/copy-runtime.mjs` | Copies pinned Pyodide core into the static build |
+| `scripts/vendor_wheels.py` | Re-downloads and SHA-256-verifies the pinned pure-Python wheels |
+
+### Relay API
+
+`POST /api/telegram`
+
+```json
+{
+  "token": "123456789:AA…",
+  "method": "sendMessage",
+  "payload": { "chat_id": 123, "text": "hello" }
+}
+```
+
+Optional multipart uploads use:
+
+```json
+{
+  "token": "123456789:AA…",
+  "method": "sendDocument",
+  "payload": { "chat_id": 123 },
+  "multipart": {
+    "content_type": "multipart/form-data; boundary=…",
+    "data_base64": "…"
+  }
+}
+```
+
+The relay rejects cross-origin browser requests, unsupported methods, invalid tokens and oversized payloads. It applies a best-effort per-instance rate limit. It does not persist request data.
+
+`GET /api/health` returns service mode and confirms that storage is browser-only.
 
 ---
 
-## 📄 License
+## Security notes
 
-MIT © **editz900s**
+- Bot tokens are stored **unencrypted** in browser storage. Anyone with access to the browser profile or an exported workspace can read them.
+- Workspace exports contain plaintext tokens. Keep them private.
+- Logs redact bot tokens, but message content and chat metadata are stored locally.
+- Run only trusted Python code. A Web Worker isolates execution from the UI thread, but it is not a security sandbox for malicious code.
+- The public relay requires a bot token and only forwards allowlisted Telegram Bot API methods. It is not a general-purpose proxy.
+- Clearing site data deletes the workspace. Export first if you need a backup.
 
-Made with ⚡ by **editz900s** — if you deploy it, keep the credit.
+## License
+
+MIT. See `LICENSE`.

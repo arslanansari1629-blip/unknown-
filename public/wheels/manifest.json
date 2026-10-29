@@ -1,0 +1,82 @@
+{
+  "micropip": {
+    "version": "0.8.0",
+    "file": "micropip-0.8.0-py3-none-any.whl",
+    "sha256": "9b576873b4cf00e600270b34cacc27d77f506c7b1c59e1c9ce760db03b8f7916"
+  },
+  "packaging": {
+    "version": "24.2",
+    "file": "packaging-24.2-py3-none-any.whl",
+    "sha256": "09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"
+  },
+  "pytelegrambotapi": {
+    "version": "4.26.0",
+    "file": "pytelegrambotapi-4.26.0-py3-none-any.whl",
+    "sha256": "6a7a10571dcecc01aac917269baf4321a0518d5db1fe57b6a09b76cab2bd6b91"
+  },
+  "python-telegram-bot": {
+    "version": "21.10",
+    "file": "python_telegram_bot-21.10-py3-none-any.whl",
+    "sha256": "c874d2461d6bfa4b05c314cf6116cf1dafe537689aa8249924dd988603b6ba21"
+  },
+  "requests": {
+    "version": "2.32.3",
+    "file": "requests-2.32.3-py3-none-any.whl",
+    "sha256": "70761cfe03c773ceb22aa2f671b4757976145175cdfca038c02654d061d6dcc6"
+  },
+  "urllib3": {
+    "version": "2.3.0",
+    "file": "urllib3-2.3.0-py3-none-any.whl",
+    "sha256": "1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df"
+  },
+  "charset-normalizer": {
+    "version": "3.4.1",
+    "file": "charset_normalizer-3.4.1-py3-none-any.whl",
+    "sha256": "d98b1668f06378c6dbefec3b92299716b931cd4e6061f3c875a71ced1780ab85"
+  },
+  "idna": {
+    "version": "3.10",
+    "file": "idna-3.10-py3-none-any.whl",
+    "sha256": "946d195a0d259cbba61165e88e65941f16e9b36ea6ddb97f00452bae8b1287d3"
+  },
+  "certifi": {
+    "version": "2025.1.31",
+    "file": "certifi-2025.1.31-py3-none-any.whl",
+    "sha256": "ca78db4565a652026a4db2bcdf68f2fb589ea80d0be70e03929ed730746b84fe"
+  },
+  "httpx": {
+    "version": "0.27.2",
+    "file": "httpx-0.27.2-py3-none-any.whl",
+    "sha256": "7bb2708e112d8fdd7829cd4243970f0c223274051cb35ee80c03301ee29a3df0"
+  },
+  "httpcore": {
+    "version": "1.0.7",
+    "file": "httpcore-1.0.7-py3-none-any.whl",
+    "sha256": "a3fff8f43dc260d5bd363d9f9cf1830fa3a458b332856f34282de498ed420edd"
+  },
+  "h11": {
+    "version": "0.14.0",
+    "file": "h11-0.14.0-py3-none-any.whl",
+    "sha256": "e3fe4ac4b851c468cc8363d500db52c2ead036020723024a109d37346efaa761"
+  },
+  "anyio": {
+    "version": "4.8.0",
+    "file": "anyio-4.8.0-py3-none-any.whl",
+    "sha256": "b5011f270ab5eb0abf13385f851315585cc37ef330dd88e27ec3d34d651fd47a"
+  },
+  "sniffio": {
+    "version": "1.3.1",
+    "file": "sniffio-1.3.1-py3-none-any.whl",
+    "sha256": "2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2"
+  },
+  "typing-extensions": {
+    "version": "4.12.2",
+    "file": "typing_extensions-4.12.2-py3-none-any.whl",
+    "sha256": "04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d"
+  },
+  "pyodide-http": {
+    "version": "0.2.1",
+    "file": "pyodide_http-0.2.1-py3-none-any.whl",
+    "sha256": "504f62904536a91049c12d0b9162ebaa187a84a3dd877e17c04fd9bf6ec3b68e"
+  }
+}

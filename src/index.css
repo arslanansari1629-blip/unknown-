@@ -1,0 +1,38 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+}
+
+:root { color-scheme: dark; }
+html { scroll-behavior: smooth; }
+body { margin: 0; min-width: 320px; background: #0a0e14; font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+::selection { background: rgba(52, 211, 153, 0.25); color: #fff; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #2a3441; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #3a4656; }
+button, input, select, textarea { font: inherit; }
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+:focus-visible { outline: 2px solid rgba(52, 211, 153, 0.7); outline-offset: 2px; }
+
+@layer components {
+  .card { @apply rounded-xl border border-white/8 bg-[#111720] shadow-[0_1px_0_rgba(255,255,255,0.02)_inset]; }
+  .page-title { @apply text-2xl font-semibold tracking-tight text-white; }
+  .page-subtitle { @apply mt-1.5 text-sm leading-6 text-slate-400; }
+  .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-400 px-4 py-2.5 text-sm font-semibold text-[#052018] shadow-lg shadow-emerald-500/10 transition hover:bg-emerald-300 active:scale-[0.98] disabled:hover:bg-emerald-400; }
+  .btn-secondary { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.035] px-3.5 py-2.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.98]; }
+  .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-lg border border-rose-400/25 bg-rose-400/10 px-3.5 py-2.5 text-sm font-medium text-rose-200 transition hover:bg-rose-400/20; }
+  .icon-btn { @apply inline-grid h-8 w-8 shrink-0 place-items-center rounded-md text-slate-400 transition hover:bg-white/[0.06] hover:text-white; }
+  .input { @apply w-full rounded-lg border border-white/10 bg-[#0b1017] px-3 py-2.5 text-sm text-slate-100 outline-none transition placeholder:text-slate-600 focus:border-emerald-400/50 focus:ring-2 focus:ring-emerald-400/10; }
+  .label { @apply mb-1.5 block text-xs font-medium text-slate-400; }
+  .chip { @apply inline-flex items-center gap-1 rounded-md border border-white/8 bg-white/[0.035] px-2 py-0.5 text-[10px] font-medium text-slate-400; }
+  select.input { appearance: auto; }
+}
+.cm-editor { background: #0b1017 !important; }
+.cm-editor.cm-focused { outline: none !important; }

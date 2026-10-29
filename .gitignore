@@ -14,3 +14,9 @@ node_modules/
 Thumbs.db
 .idea/
 .vscode/
+
+# Generated browser Python runtime (copied from the pinned npm package at build)
+public/runtime/
+dist/
+playwright-report/
+test-results/
